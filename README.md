@@ -1,8 +1,10 @@
 # BIOBUZZ Robot Simulator
 
+**Made by FTC Team 19859.**
+
 Practise setting up and tuning an FTC BIOBUZZ (2026–27) robot **before the robot exists**. The simulator runs real
 FTC robot code (FTC SDK 12.0 + Pedro Pathing 3.0.1) against a hidden virtual robot in your browser: a Driver Station,
-a gamepad, motors, servos, two turrets, flywheels, shots and the field. Made by FTC team 19859.
+a gamepad, motors, servos, two turrets, flywheels, shots and the field.
 
 This repo contains:
 
@@ -130,3 +132,7 @@ Runs every test (each starts its own simulator in the background; logs in `sim/w
 ## License
 
 The FTC SDK parts keep FIRST's license (`LICENSE`, `FTC_SDK_README.md`). Pedro Pathing is used as a library.
+
+## Credit
+
+Made by FTC Team 19859. If you use or build on it, please credit **FTC Team 19859**.
