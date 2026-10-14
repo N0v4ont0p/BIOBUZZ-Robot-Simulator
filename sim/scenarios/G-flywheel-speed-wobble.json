@@ -1,0 +1,16 @@
+{
+  "name": "G. Test robot: flywheel wobble grows with speed",
+  "description": "A perfect robot whose flywheels wobble more the faster they spin (a slightly out-of-true wheel): the ready band at the longest shot speed is clearly wider than at the shortest. Used by the shot-speed check test.",
+  "config": "preset",
+  "flywheel": {
+    "front": {
+      "wobbleTicks": 6,
+      "wobbleGrowth": 5.0
+    },
+    "back": {
+      "wobbleTicks": 6,
+      "wobbleGrowth": 5.0
+    }
+  },
+  "faults": []
+}

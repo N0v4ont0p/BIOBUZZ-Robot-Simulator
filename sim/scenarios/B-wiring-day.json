@@ -1,0 +1,10 @@
+{
+  "name": "B. Wiring day",
+  "description": "A new robot, wired in a hurry. Three things are wrong. Configure the robot by following the cables (Wiring tab), then run the setup programs: they should show you each problem.",
+  "battery": {"charge": 0.3},
+  "faults": [
+    {"type": "swapMotorCables", "a": "CH.0", "b": "CH.1"},
+    {"type": "encoderUnplugged", "port": "EH.2"},
+    {"type": "lowBattery"}
+  ]
+}

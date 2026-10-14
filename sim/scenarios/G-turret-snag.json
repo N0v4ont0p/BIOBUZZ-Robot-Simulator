@@ -1,0 +1,12 @@
+{
+  "name": "G. Test robot: turret snag",
+  "description": "A perfect turret without gear play, but its cable catches about 110 deg left of forward and holds it there (as firmly as a stop), long after program 3 measured the stops (re-routed later). Homing must fail loudly, never give a wrong zero.",
+  "config": "preset",
+  "turret": {
+    "playFrontDeg": 0,
+    "playBackDeg": 0,
+    "snagDeg": 110,
+    "snagTorque": 50
+  },
+  "faults": []
+}

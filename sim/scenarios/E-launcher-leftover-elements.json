@@ -1,0 +1,6 @@
+{
+  "name": "E. Launcher: elements left in the robot",
+  "description": "After program 2 practice a NECTAR is still sitting against the front gate and a POLLEN against the back gate. Program 7 says nothing loaded: look in the launcher lanes before you start (Workbench, Intake + launchers, Empty the robot). Forget, and the recovery shot fires two elements: a bigger dip and slower recovery than one shot really gives.",
+  "launcher": {"preloadFront": 1, "preloadBack": 1},
+  "faults": []
+}

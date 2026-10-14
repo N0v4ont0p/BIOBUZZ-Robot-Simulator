@@ -1,0 +1,10 @@
+{
+  "name": "C. Turret: tight cable",
+  "description": "The front turret's cable bundle goes tight about 50 degrees left of forward, long before the hard stop. Reaching straight left already pulls on it (watch the cable on the Turret view). Program 3 refuses a left stop short of straight left (90 deg): re-route the cable (Turret view), then turn on to the real stop.",
+  "config": "preset",
+  "faults": [],
+  "turret": {
+    "cableTightMaxDeg": {"min": 44, "max": 52},
+    "cableStretchDeg": 70
+  }
+}

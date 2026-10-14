@@ -1,0 +1,6 @@
+{
+  "name": "C. Launcher: dragging back flywheel",
+  "description": "A back flywheel bearing is dry and the wheel runs slightly out of true: lower top speed and a much bigger speed wobble. Program 7 should show a lower top speed and a wider ready band for the back flywheel than for the front.",
+  "flywheel": {"back": {"viscous": 6e-5, "wobbleTicks": 25}},
+  "faults": []
+}

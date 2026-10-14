@@ -1,0 +1,11 @@
+{
+  "name": "C. One slow gate",
+  "description": "The back gate's servo is a slow torque model left over from last season: it opens much later than the front gate. The gate travel time has to come from the slower (back) gate, or firing feeds before that gate is open.",
+  "gate": {
+    "backIsSlower": true,
+    "back": {"speedS60": {"min": 0.26, "max": 0.30}}
+  },
+  "faults": [
+    {"type": "slowGate", "part": "gate.back", "caughtBy": "4 Servo Positions, step 11 (gate travel time)"}
+  ]
+}

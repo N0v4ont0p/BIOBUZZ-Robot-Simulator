@@ -1,0 +1,7 @@
+{
+  "name": "D. Odometry: forward pod not touching the floor",
+  "description": "The forward (X) pod's spring is not holding its wheel on the floor. Program 1 step 4 shows it: pushing the robot forward never makes the forward pod count.",
+  "config": "preset",
+  "pinpoint": {"xPodLifted": true},
+  "faults": [{"type": "custom", "text": "Forward pod wheel lifted off the floor", "caughtBy": "Program 1, step 4 (forward pod never counts)"}]
+}

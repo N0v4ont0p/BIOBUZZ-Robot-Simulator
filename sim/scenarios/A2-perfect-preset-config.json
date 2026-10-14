@@ -1,0 +1,6 @@
+{
+  "name": "A2. Perfect robot, configuration already done",
+  "description": "Like A, but the robot configuration is already typed in and active. Go straight to setup program 1.",
+  "config": "preset",
+  "faults": []
+}

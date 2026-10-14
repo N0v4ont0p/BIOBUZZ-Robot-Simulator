@@ -1,0 +1,17 @@
+{
+  "name": "F. Random trouble",
+  "description": "Two random problems (the seed picks them; same seed = same robot). Find them with the setup programs, then check the report card: it says what was wrong and which program should have caught it.",
+  "randomFaults": {
+    "count": 2,
+    "pool": [
+      {"type": "lowBattery", "set": {"battery.charge": 0.3}},
+      {"type": "turretNotForward", "set": {"turret.startDeg": -10}},
+      {"type": "intakeReversed", "set": {"intake.inSign": -1}},
+      {"type": "swapMotorCables", "a": "CH.2", "b": "CH.3"},
+      {"type": "encoderUnplugged", "port": "EH.3"},
+      {"type": "encoderReversed", "port": "EH.2"},
+      {"type": "swapServoCables", "a": "CH.3", "b": "CH.4"}
+    ]
+  },
+  "faults": []
+}

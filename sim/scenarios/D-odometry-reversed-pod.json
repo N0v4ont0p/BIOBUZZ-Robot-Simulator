@@ -1,0 +1,7 @@
+{
+  "name": "D. Odometry: strafe pod counts the other way",
+  "description": "This robot's strafe (Y) pod is mounted the other way round from last season's robot, so the direction in the code is wrong. Program 5's Pinpoint Tuner finds it; until the programmer enters it, program 6 cannot pass.",
+  "config": "preset",
+  "pinpoint": {"yPodSign": 1},
+  "faults": [{"type": "custom", "text": "Strafe pod counts the other way (yPodDirection must be FORWARD)", "caughtBy": "Program 5, Pinpoint Tuner (strafe direction)"}]
+}

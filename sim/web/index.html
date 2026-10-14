@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIOBUZZ Simulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">BIOBUZZ Simulator <span class="sub">19859 setup practice</span></div>
+  <div class="scenario">
+    <select id="scenarioSelect" title="Scenario (hidden robot)"></select>
+    <input id="seedInput" type="number" title="Seed: same seed = same hidden robot" placeholder="seed">
+    <button id="newRobot" class="btn" title="Throw away the sandbox and start this scenario with a fresh robot">New robot</button>
+  </div>
+  <button id="testMode" class="btn secondary" title="A fully built and tuned robot for trying things out. Ending it puts everything back exactly as it was">Test mode</button>
+  <span id="testModeBanner" class="testmode" hidden></span>
+  <div id="simStatus" class="simstatus"></div>
+</header>
+
+<main class="layout">
+  <section class="ds-wrap" aria-label="Driver Station">
+    <div class="ds" id="ds">
+      <div class="ds-bar">
+        <span class="ds-title">Driver Station</span>
+        <span id="dsNet" class="pill">19859-RC</span>
+        <span id="dsRc" class="pill"></span>
+        <span class="pill">Robot <b id="dsBattery">--</b></span>
+        <span class="pads"><span id="pad1" class="pad" title="Gamepad 1: options + cross">1</span><span id="pad2" class="pad" title="Gamepad 2: options + circle">2</span></span>
+        <button id="dsMenuBtn" class="ds-menu-btn" aria-haspopup="true" title="Menu">&#8942;</button>
+        <div id="dsMenu" class="ds-menu" hidden>
+          <button data-act="config">Configure Robot</button>
+          <button data-act="restart">Restart Robot</button>
+          <button data-act="keyboard">Use keyboard as gamepad 1</button>
+          <button data-act="help">Gamepad help</button>
+        </div>
+      </div>
+      <div class="ds-body" id="dsMain">
+        <div class="ds-left">
+          <div class="ds-pick">
+            <button id="pickAuto" class="pick" title="Autonomous OpModes">&#9664; Autonomous</button>
+            <button id="pickTele" class="pick" title="TeleOp OpModes">TeleOp &#9654;</button>
+          </div>
+          <div id="opList" class="oplist" hidden></div>
+          <div class="ds-selected" id="dsSelected">No OpMode selected</div>
+          <label class="timer"><input type="checkbox" id="autoTimer" checked> 30 s timer (autonomous)</label>
+          <div class="ds-run">
+            <button id="mainBtn" class="main-btn" disabled>INIT</button>
+            <button id="stopBtn" class="stop-btn" hidden title="Stop">&#9632;</button>
+          </div>
+          <div id="dsClock" class="clock"></div>
+        </div>
+        <div class="ds-right">
+          <div id="dsError" class="ds-error" hidden></div>
+          <div id="dsWarning" class="ds-warning" hidden></div>
+          <div id="telemetry" class="telemetry" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="ds-body" id="dsConfig" hidden></div>
+      <div id="toast" class="toast" hidden></div>
+    </div>
+    <div class="padhelp" id="padHelp" hidden>
+      <b>Gamepad:</b> plug in a PS4/PS5 controller, press any button, then <b>options + cross</b> to make it gamepad 1
+      (<b>options + circle</b> for gamepad 2), like the real Driver Station.<br>
+      <b>Keyboard (menu &rarr; use keyboard):</b> X cross, O circle, Z square, T triangle, 1 L1, 2 R1, 3 L2, 4 R2,
+      5 share, 6 options, 7 PS, 8 touchpad, arrows d-pad, WASD left stick, IJKL right stick.
+    </div>
+    <div class="padpanel" id="padPanel">
+      <div class="pp-head"><b>Controller</b>
+        <label>drives <select id="ppUser"><option value="1">gamepad 1</option><option value="2">gamepad 2</option></select></label>
+        <span class="hint">Hold a button with the mouse, drag the sticks. Shift-click a button to latch it down.</span></div>
+      <div class="pp-body">
+        <div class="pp-col">
+          <div class="pp-row"><button data-b="left_trigger">L2</button><button data-b="left_bumper">L1</button></div>
+          <div class="pp-dpad"><button data-b="dpad_up" class="u">&#9650;</button><button data-b="dpad_left" class="l">&#9664;</button><button data-b="dpad_right" class="r">&#9654;</button><button data-b="dpad_down" class="d">&#9660;</button></div>
+          <div class="pp-stick" data-s="left"><span class="knob"></span></div>
+          <button data-b="left_stick_button" class="small">L3</button>
+        </div>
+        <div class="pp-mid">
+          <div class="pp-row"><button data-b="share" class="small">share</button><button data-b="options" class="small">options</button></div>
+          <button data-b="touchpad" class="pp-touch">touchpad</button>
+          <button data-b="ps" class="small">PS</button>
+        </div>
+        <div class="pp-col">
+          <div class="pp-row"><button data-b="right_bumper">R1</button><button data-b="right_trigger">R2</button></div>
+          <div class="pp-face"><button data-b="triangle" class="u">&#9651;</button><button data-b="square" class="l">&#9633;</button><button data-b="circle" class="r">&#9675;</button><button data-b="cross" class="d">&#10005;</button></div>
+          <div class="pp-stick" data-s="right"><span class="knob"></span></div>
+          <button data-b="right_stick_button" class="small">R3</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bench-wrap" aria-label="Workbench">
+    <nav class="tabs" id="benchTabs"></nav>
+    <div class="bench" id="bench"></div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+<script src="ds.js"></script>
+<script src="config.js"></script>
+<script src="bench.js"></script>
+</body>
+</html>

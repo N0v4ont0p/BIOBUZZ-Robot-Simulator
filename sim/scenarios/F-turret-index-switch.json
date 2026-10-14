@@ -1,0 +1,9 @@
+{
+  "name": "F. Turret index switch",
+  "description": "This robot has the optional magnetic switch at turret forward (Digital Device \"yz\", Control Hub digital port 0), and the turrets were left crooked. Program 3 measures where the switch turns on; after that every INIT zeroes the turret on it: turn the turrets slowly LEFT through forward until the screen says INDEXED.",
+  "config": "preset",
+  "turret": {"indexSensor": true, "startDeg": 7},
+  "faults": [
+    {"type": "turretNotForward", "set": {"turret.startDeg": 7}}
+  ]
+}

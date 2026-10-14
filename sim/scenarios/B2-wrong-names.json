@@ -1,0 +1,6 @@
+{
+  "name": "B2. A teammate typed the configuration",
+  "description": "A teammate already typed the robot configuration and made it active, but did not use exactly the names from the setup guide (D-1). Program 1 step 1 lists every name the code can't find. Fix them in Configure Robot.",
+  "config": {"preset": true, "rename": {"lt": "yaw", "bpanel": "bpannel"}},
+  "faults": []
+}

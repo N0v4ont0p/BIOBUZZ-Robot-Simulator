@@ -1,0 +1,7 @@
+{
+  "name": "C. Launcher: swapped flywheel wires",
+  "description": "When the front flywheel's motor cable was extended, its red and black power wires were swapped. The motor now turns against its own encoder: the hub's speed control would run it at full speed. Program 2 must stop and say so.",
+  "faults": [
+    {"type": "encoderReversed", "port": "EH.2", "why": "front flywheel power wires swapped at the extension"}
+  ]
+}

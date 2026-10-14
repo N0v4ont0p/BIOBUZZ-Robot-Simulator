@@ -1,0 +1,419 @@
+_meta:
+  schema: 1
+  updated: 2026-10-03
+  suite_generated_code: true
+  season: biobuzz-2026-27
+  season_source: BIOBUZZ_Competition_Manual_V1.pdf (173 pp, 2026-09-12)
+  validation_gap: >
+    validate_config.py validates against season-extensions/ACTIVE, which still reads
+    decode-2025-26, and the biobuzz-2026-27 extension is a pre-kickoff DRAFT whose
+    mechanism axes are UNKNOWN. season_mechanisms below are grounded in the V1 manual
+    and the team's answers, but no validator run can confirm them until that extension
+    is rebuilt from the manual and made ACTIVE. Treat generation_allowed as NOT established.
+  actuator_budget: >
+    BIOBUZZ R503 caps 8 motors + 8 servos (DECODE allowed 10 servos). Motors 8 = 4 drive
+    + 1 intake + 2 flywheel + 1 yaw motor geared to BOTH turrets: exactly at the cap, zero
+    spare. Servos 5 = 2 hood + 1 ramp + 2 feed gates (one per launcher, team 2026-10-05, expected).
+  dev_tools: >
+    FTControl Panels (com.bylazar:fullpanels) installed for practice/tuning only. R704 bans
+    Panels/Dashboard streaming during matches: competition OpModes must not use it.
+    No powered motion in INIT (R102/G403): confirmed by team.
+  device_map_pending: >
+    Robot is CAD-only with no Robot Controller configuration. Ask for the exact
+    hardwareMap strings once wired; do not propose a naming convention.
+
+team:
+  number: {value: 19859, source: asked, confirmed: true}
+  experience: {value: veteran, source: asked, confirmed: true}
+  predecessor: {value: null, source: asked, confirmed: false}
+
+drivetrain:
+  type: {value: mecanum, source: asked, confirmed: true}
+  mecanum:
+    wheel_source: {value: unknown, source: inferred, confirmed: false}
+    wheel_diameter_mm: {value: unknown, source: inferred, confirmed: false}
+    wheel_durometer: {value: unknown, source: inferred, confirmed: false}
+
+control_hardware:
+  hub_generation: {value: REV_Control_Hub, source: inferred, confirmed: true}
+  # time-gated: manual R701 makes the REV Control Hub the controller for 2026-27; no info gain in asking
+  expansion_hub_count:
+    value: 1
+    source: inferred
+    confirmed: false
+    notes: 8 motors exceeds the Control Hub's 4 motor ports; R701 allows at most one Expansion Hub
+
+sensing:
+  vision: {value: none, source: asked, confirmed: true}
+  odometry:
+    value: goBILDA_pinpoint
+    source: asked
+    confirmed: true
+    notes: goBILDA 4-bar pods (goBILDA_4_BAR_POD), same as DECODE; confirmed 2026-10-03
+
+software_stack:
+  pathing:
+    value: pedro_pathing
+    source: asked
+    confirmed: true
+    notes: >
+      Latest Pedro: com.pedropathing:revhub:3.0.1 + tuning:1.0.1 on FTC SDK 12.0.0.
+      Pedro 3.0 API (Follower(localizer, drivetrain, algorithm), MecanumConfig,
+      PinpointConfig, ForesightConfig, Paths.line/curve, math.Pose). DECODE code is
+      Pedro 2.1.2 (FollowerBuilder/FollowerConstants/geometry.Pose) and must be ported.
+  opmode_style: {value: raw_linear_opmode, source: asked, confirmed: true}
+  # raw OpMode/LinearOpMode with enum state machines, as DECODE
+  behavior_layer: {value: none, source: inferred, confirmed: false}
+
+season_mechanisms:
+  # Keys match the biobuzz-2026-27 extension requested from the refract plugin; they fail
+  # validation until that extension exists and is selected (see _meta.validation_gap).
+  intake: {value: roller, source: asked, confirmed: true, notes: "vectored roller, like DECODE"}
+  element_handling: {value: pollen_and_nectar, source: asked, confirmed: true, notes: "own NECTAR only (G408)"}
+  element_sorting: {value: passive, source: asked, confirmed: true, notes: "size filter: 2.8 in POLLEN vs 3.6 in NECTAR"}
+  launcher:
+    value: flywheel
+    source: asked
+    confirmed: true
+    notes: "1 flywheel motor + 1 hood servo per launcher; front launches NECTAR, back launches POLLEN"
+  launcher_count: {value: 2, source: asked, confirmed: true}
+  turret:
+    value: multi_axis
+    source: asked
+    confirmed: true
+    notes: >
+      Yaw + hood per launcher. ONE yaw motor geared to drive BOTH turrets (not independent).
+      Shared yaw cannot correct parallax between the two pivots; aim must be solved for the
+      launcher that is firing. Gear ratio/encoder placement not yet known.
+  flower_placement: {value: none, source: asked, confirmed: true}
+  flower_retrieval: {value: present, source: asked, confirmed: true, notes: "servo-deployed ramp, POLLEN only from FLOWER bottom (G418)"}
+  garden_herding: {value: none, source: asked, confirmed: true}
+  endgame_parking: {value: loading_zone, source: asked, confirmed: true, notes: "LOADING ZONE is the only PARK scoring zone (10.5.4)"}
+  # hive target = own CELL on the robot's side of y = 72 (frame crossbar); start state red audience
+  # CELL up, blue far CELL up. Feed = intake motor pushes both launchers at once through one gate each.
+
+fabrication:
+  capability: {value: cnc_aluminum_or_carbon, source: asked, confirmed: true}
+
+device_map:
+  # PLACEHOLDERS (team, 2026-10-05): DECODE names where the design is the same, new names otherwise.
+  # Expected to change; re-confirm against the Robot Controller configuration when wired (D-1).
+  drive_left_front: {value: "lf", source: asked, confirmed: true}
+  drive_left_back: {value: "lb", source: asked, confirmed: true}
+  drive_right_front: {value: "rf", source: asked, confirmed: true}
+  drive_right_back: {value: "rb", source: asked, confirmed: true}
+  pinpoint: {value: "pp", source: asked, confirmed: true}
+  intake_motor: {value: "intake", source: asked, confirmed: true}
+  yaw_motor: {value: "lt", source: asked, confirmed: true, notes: "DECODE turret motor name; yaw angle from its motor encoder, as DECODE"}
+  front_flywheel: {value: "fs", source: asked, confirmed: true, notes: "new name (DECODE had ls/rs left/right)"}
+  back_flywheel: {value: "bs", source: asked, confirmed: true, notes: "new name"}
+  front_hood: {value: "fpanel", source: asked, confirmed: true, notes: "new name (DECODE hood was panel)"}
+  back_hood: {value: "bpanel", source: asked, confirmed: true, notes: "new name"}
+  ramp_servo: {value: "ramp", source: asked, confirmed: true, notes: "new name"}
+  front_gate: {value: "fg", source: asked, confirmed: true, notes: "new name (DECODE gates were lg/rg); team expects one gate servo per launcher, not yet in CAD"}
+  back_gate: {value: "bg", source: asked, confirmed: true, notes: "new name; see front_gate"}
+  yaw_index: {value: "yz", source: asked, confirmed: true, notes: "OPTIONAL Digital Device: magnetic limit switch seeing a magnet on the front turret at forward; zeroes the yaw at INIT. Not in DeviceNames.ALL: the code works without it"}
+
+device_ownership:
+  - {device: drive_left_front, owner: "Drive (teleop) / Pedro Follower (auto)", opmode_type: both, confirmed: true}
+  - {device: pinpoint, owner: "Drive (teleop) / Pedro Follower (auto)", opmode_type: both, confirmed: true}
+  - {device: yaw_motor, owner: Yaw, opmode_type: both, confirmed: true}
+  - {device: yaw_index, owner: Yaw, opmode_type: both, confirmed: true}
+  - {device: intake_motor, owner: Intake, opmode_type: both, confirmed: true}
+  - {device: front_flywheel, owner: "Launcher (front)", opmode_type: both, confirmed: true}
+  - {device: back_flywheel, owner: "Launcher (back)", opmode_type: both, confirmed: true}
+  - {device: front_gate, owner: "Launcher (front)", opmode_type: both, confirmed: true}
+  - {device: back_gate, owner: "Launcher (back)", opmode_type: both, confirmed: true}
+
+cross_opmode_state:
+  - {field: MatchState.alliance, written_by: auto, read_by: teleop, required_before_read: true, staleness_guard: "null until an auto INITs this app session; teleop falls back to driver pick", confirmed: true}
+  - {field: MatchState.pose, written_by: auto, read_by: teleop, required_before_read: true, staleness_guard: "null until auto runs; teleop falls back to reseed", confirmed: true}
+  - {field: MatchState.yawZeroed, written_by: auto, read_by: teleop, required_before_read: true, staleness_guard: "false until auto INIT zeroes; teleop zeroes itself at INIT if false", confirmed: true}
+
+reference_frames:
+  pedro3_field:
+    source: "Pedro Pathing 3.0 field frame, as drawn by Pedro-Pathing/visualizer (BIOBUZZ field image)"
+    definition_ref: "pedro-visualizer src/App.svelte:2367-2380 (x scale left->right, y scale inverted so y=0 at bottom); utils/headingInterpolation.ts:251 (heading = atan2(dy, dx))"
+    x_positive: right
+    y_positive: forward
+    heading_zero: "+x, facing the blue ALLIANCE wall; counter-clockwise positive"
+    units: in
+    confirmed: true
+    notes: >
+      Directions are as seen from the audience. Origin (0,0) = corner at the red ALLIANCE wall
+      and the audience wall (red GARDEN corner). +x = from red side toward blue side;
+      +y = from the red GARDEN (audience) wall toward the blue GARDEN (far) wall. Stated by
+      the team and matches the visualizer source. BIOBUZZ is 180-degree rotationally
+      symmetric: red <-> blue is (x, y, h) -> (144-x, 144-y, h+180). Do NOT use the
+      visualizer's mirrorX export option for alliance flipping; that is DECODE-style mirroring.
+
+  robot_body:
+    source: "team convention, docs/BIOBUZZ_PREREQUISITES.md section 0"
+    x_positive: forward
+    y_positive: left
+    heading_zero: "robot forward; counter-clockwise (seen from above) positive"
+    units: in
+    confirmed: true
+    notes: "origin = centre of the 4 wheel contact points; front = intake / NECTAR launcher side"
+  pedro3_pinpoint:
+    source: "Pedro 3.0 PinpointTuner output convention (values copied verbatim from the tuner)"
+    x_positive: unknown
+    y_positive: unknown
+    heading_zero: "n/a (pod offsets)"
+    units: in
+    confirmed: true
+
+  _conversions:
+    - {from: robot_body, to: pedro3_field, status: declared, confirmed: true,
+       transform: "p_field = (pose.x, pose.y) + R(pose.heading) * (x_body, y_body); heading_field = pose.heading + heading_body. Applied explicitly in AutoAim/Field code"}
+
+tuning_constants:
+  tuning_status: {value: not_yet_tunable, source: asked, confirmed: true}
+  # Pedro 3.0 tuner result keys. Drive motor and pod DIRECTIONS are not here: they are enums, emit_tuning
+  # renders numbers only, so they are set in tools/codegen/Constants.java.tpl (DECODE placeholders until the
+  # Mecanum Tuner / Pinpoint Tuner, F-1 / F-2). Same for Intake.REVERSED / Launcher.*_REVERSED (E-3 / E-4).
+  localizer:
+    xPodOffset: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_pinpoint, tuning_procedure_ref: pedro/procedures/PinpointTuner.java}
+    yPodOffset: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_pinpoint, tuning_procedure_ref: pedro/procedures/PinpointTuner.java}
+    podTicksPerMm: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/mm, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md program 6 (96 in push)"}
+    imuYawScalar: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md program 6 (10 turns)"}
+    velocityFrameField: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md program 6 step 1 (E-10): 1 = Pedro velocity is in field directions"}
+  foresight:
+    maxAchievableForwardVelocity: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    maxAchievableStrafeVelocity: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    naturalForwardDeceleration: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    naturalStrafeDeceleration: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    headingBrakingLinearCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    headingBrakingQuadraticCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    headingKP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    forwardBrakingLinearCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    forwardBrakingQuadraticCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    strafeBrakingLinearCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    strafeBrakingQuadraticCoefficient: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    forwardTranslationalPrimaryKP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    forwardTranslationalSecondaryKP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    strafeTranslationalPrimaryKP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    strafeTranslationalSecondaryKP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    coastKV: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+    brakeKV: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: pedro/procedures/ForesightTuner.java}
+  robot:
+    robotMass: {value: null, origin: untuned, source: asked, confirmed: true, units: kg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-1"}
+  mechanism_offsets:
+    centerToFront: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    centerToBack: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    centerToLeft: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    centerToRight: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    frontPivotX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    frontPivotY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    backPivotX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+    backPivotY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: robot_body, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md C-2, C-3"}
+  yaw:
+    yawTicksPerDegFront: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/deg (signed), tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part A)"}
+    yawTicksPerDegBack: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/deg (signed), tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part A)"}
+    yawMinDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: front-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part A)"}
+    yawMaxDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: front-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part A)"}
+    yawKs: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part B)"}
+    yawKv: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part B)"}
+    yawPowerSign: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part B)"}
+    yawTuningVoltage: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part B)"}
+    yawKp: {value: null, origin: untuned, source: asked, confirmed: true, units: deg/s per deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (Yaw Tuner part C)"}
+    yawPlayDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: front-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-6 (program 3, gear play)"}
+    yawIndexDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: front-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-1 (program 3: where the optional index switch turns on, turning left)"}
+    frontYawTrimDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: front-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (program 8: yaw trim that scored, averaged over the saved points)"}
+    backYawTrimDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: back-turret deg, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (program 9: yaw trim that scored, averaged over the saved points)"}
+    yawHomeLeftDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: "front-turret deg", tuning_procedure_ref: "docs/BIOBUZZ_TURRET_HOMING_PLAN.md (program 3, turret homing step)"}
+    yawHomeRightDeg: {value: null, origin: untuned, source: asked, confirmed: true, units: "front-turret deg", tuning_procedure_ref: "docs/BIOBUZZ_TURRET_HOMING_PLAN.md (program 3, turret homing step)"}
+    yawHomeFastDegS: {value: null, origin: untuned, source: asked, confirmed: true, units: "deg/s", tuning_procedure_ref: "docs/BIOBUZZ_TURRET_HOMING_PLAN.md (program 3, turret homing step)"}
+    yawHomeCreepDegS: {value: null, origin: untuned, source: asked, confirmed: true, units: "deg/s", tuning_procedure_ref: "docs/BIOBUZZ_TURRET_HOMING_PLAN.md (program 3, turret homing step)"}
+    yawHomeCrossDegS: {value: null, origin: untuned, source: asked, confirmed: true, units: "deg/s", tuning_procedure_ref: "docs/BIOBUZZ_TURRET_HOMING_PLAN.md (program 3, turret homing step)"}
+  launcher_front:
+    frontFlywheelP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    frontFlywheelI: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    frontFlywheelD: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    frontFlywheelF: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    frontFlywheelVoltage: {value: null, origin: untuned, source: asked, confirmed: true, units: V, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3 (battery voltage while F was measured)"}
+    frontReadyBand: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3, G-5"}
+    frontIdleVelocity: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3, G-5"}
+    frontReadyBandLow: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (ready band at the lowest shot speed)"}
+    frontReadyBandHigh: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (ready band at the highest shot speed)"}
+    frontReadyBandLowSpeed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (the lowest shot speed)"}
+    frontReadyBandHighSpeed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (the highest shot speed)"}
+    frontHoodMin: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-7"}
+    frontHoodMax: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-7"}
+    frontShot01Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 1)"}
+    frontShot01Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 1)"}
+    frontShot01Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 1)"}
+    frontShot01Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 1)"}
+    frontShot02Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 2)"}
+    frontShot02Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 2)"}
+    frontShot02Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 2)"}
+    frontShot02Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 2)"}
+    frontShot03Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 3)"}
+    frontShot03Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 3)"}
+    frontShot03Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 3)"}
+    frontShot03Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 3)"}
+    frontShot04Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 4)"}
+    frontShot04Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 4)"}
+    frontShot04Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 4)"}
+    frontShot04Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 4)"}
+    frontShot05Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 5)"}
+    frontShot05Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 5)"}
+    frontShot05Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 5)"}
+    frontShot05Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 5)"}
+    frontShot06Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 6)"}
+    frontShot06Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 6)"}
+    frontShot06Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 6)"}
+    frontShot06Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 6)"}
+    frontShot07Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 7)"}
+    frontShot07Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 7)"}
+    frontShot07Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 7)"}
+    frontShot07Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 7)"}
+    frontShot08Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 8)"}
+    frontShot08Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 8)"}
+    frontShot08Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 8)"}
+    frontShot08Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 8)"}
+    frontShot09Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 9)"}
+    frontShot09Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 9)"}
+    frontShot09Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 9)"}
+    frontShot09Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 9)"}
+    frontShot10Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 10)"}
+    frontShot10Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 10)"}
+    frontShot10Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 10)"}
+    frontShot10Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 10)"}
+    frontShot11Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 11)"}
+    frontShot11Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 11)"}
+    frontShot11Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 11)"}
+    frontShot11Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 11)"}
+    frontShot12Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 12)"}
+    frontShot12Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 12)"}
+    frontShot12Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 12)"}
+    frontShot12Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 12)"}
+    frontShot13Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 13)"}
+    frontShot13Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 13)"}
+    frontShot13Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 13)"}
+    frontShot13Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 13)"}
+    frontShot14Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 14)"}
+    frontShot14Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 14)"}
+    frontShot14Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 14)"}
+    frontShot14Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 14)"}
+    frontShot15Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 15)"}
+    frontShot15Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 15)"}
+    frontShot15Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 15)"}
+    frontShot15Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 15)"}
+    frontShot16Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 16)"}
+    frontShot16Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 16)"}
+    frontShot16Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 16)"}
+    frontShot16Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Front Shot Tuner point 16)"}
+    frontGateClosed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+    frontGateOpen: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+  launcher_back:
+    backFlywheelP: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    backFlywheelI: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    backFlywheelD: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    backFlywheelF: {value: null, origin: untuned, source: asked, confirmed: true, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3"}
+    backFlywheelVoltage: {value: null, origin: untuned, source: asked, confirmed: true, units: V, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3 (battery voltage while F was measured)"}
+    backReadyBand: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3, G-5"}
+    backIdleVelocity: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-3, G-5"}
+    backReadyBandLow: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (ready band at the lowest shot speed)"}
+    backReadyBandHigh: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (ready band at the highest shot speed)"}
+    backReadyBandLowSpeed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (the lowest shot speed)"}
+    backReadyBandHighSpeed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "7 Flywheel Tuner: shot-speed check (the highest shot speed)"}
+    backHoodMin: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-7"}
+    backHoodMax: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-7"}
+    backShot01Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 1)"}
+    backShot01Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 1)"}
+    backShot01Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 1)"}
+    backShot01Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 1)"}
+    backShot02Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 2)"}
+    backShot02Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 2)"}
+    backShot02Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 2)"}
+    backShot02Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 2)"}
+    backShot03Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 3)"}
+    backShot03Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 3)"}
+    backShot03Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 3)"}
+    backShot03Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 3)"}
+    backShot04Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 4)"}
+    backShot04Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 4)"}
+    backShot04Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 4)"}
+    backShot04Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 4)"}
+    backShot05Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 5)"}
+    backShot05Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 5)"}
+    backShot05Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 5)"}
+    backShot05Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 5)"}
+    backShot06Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 6)"}
+    backShot06Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 6)"}
+    backShot06Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 6)"}
+    backShot06Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 6)"}
+    backShot07Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 7)"}
+    backShot07Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 7)"}
+    backShot07Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 7)"}
+    backShot07Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 7)"}
+    backShot08Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 8)"}
+    backShot08Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 8)"}
+    backShot08Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 8)"}
+    backShot08Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 8)"}
+    backShot09Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 9)"}
+    backShot09Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 9)"}
+    backShot09Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 9)"}
+    backShot09Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 9)"}
+    backShot10Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 10)"}
+    backShot10Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 10)"}
+    backShot10Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 10)"}
+    backShot10Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 10)"}
+    backShot11Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 11)"}
+    backShot11Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 11)"}
+    backShot11Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 11)"}
+    backShot11Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 11)"}
+    backShot12Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 12)"}
+    backShot12Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 12)"}
+    backShot12Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 12)"}
+    backShot12Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 12)"}
+    backShot13Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 13)"}
+    backShot13Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 13)"}
+    backShot13Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 13)"}
+    backShot13Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 13)"}
+    backShot14Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 14)"}
+    backShot14Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 14)"}
+    backShot14Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 14)"}
+    backShot14Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 14)"}
+    backShot15Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 15)"}
+    backShot15Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 15)"}
+    backShot15Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 15)"}
+    backShot15Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 15)"}
+    backShot16Distance: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 16)"}
+    backShot16Speed: {value: null, origin: untuned, source: asked, confirmed: true, units: ticks/s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 16)"}
+    backShot16Hood: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 16)"}
+    backShot16Feed: {value: null, origin: untuned, source: asked, confirmed: true, units: intake power 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md G-5 (Back Shot Tuner point 16)"}
+    backGateClosed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+    backGateOpen: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+  intake:
+    gateTravelS: {value: null, origin: untuned, source: asked, confirmed: true, units: s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8 (closed to fully open, slowest gate)"}
+    intakeReachIn: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): how far past the front bumper the intake takes an element"}
+    intakeWidthIn: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): width of the intake mouth (the part that takes elements), not the robot width"}
+    elementsPerShot: {value: null, origin: untuned, source: asked, confirmed: true, units: count, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): elements one SHOOT sends (AutoRunner feeds FEED_S); blank = all held"}
+  ramp:
+    rampStowed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+    rampDeployed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+    rampReachIn: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): how far past the front bumper the deployed ramp takes POLLEN from a FLOWER bottom (R105: stays inside 18 x 24 in)"}
+  drive_motion:
+    driveAccelInS2: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): measured on a test drive: typical acceleration along a path"}
+    driveDecelInS2: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): measured on a test drive: typical braking at the end of a path"}
+    driveLatAccelInS2: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): measured on a test drive: sideways acceleration in a curve"}
+    driveMaxTurnDegS: {value: null, origin: untuned, source: asked, confirmed: true, units: deg/s, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): measured on a test drive: fastest heading change along a path"}
+  goal_positions:
+    redFarCellX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-1 (blue CELLs = 180-deg rotation of red)"}
+    redFarCellY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-1 (blue CELLs = 180-deg rotation of red)"}
+    redAudienceCellX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-1 (blue CELLs = 180-deg rotation of red)"}
+    redAudienceCellY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-1 (blue CELLs = 180-deg rotation of red)"}
+  poses:
+    blueStartX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2 (placeholder until visualizer paths)"}
+    blueStartY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2 (placeholder until visualizer paths)"}
+    blueParkX: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2 (placeholder until visualizer paths)"}
+    blueParkY: {value: null, origin: untuned, source: asked, confirmed: true, units: in, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2 (placeholder until visualizer paths)"}
+    blueStartHeading: {value: null, origin: untuned, source: asked, confirmed: true, units: deg, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2"}
+    blueParkHeading: {value: null, origin: untuned, source: asked, confirmed: true, units: deg, frame: pedro3_field, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md H-2"}
+
+config_history:
+  - date: 2026-10-14
+    change: >
+      Public copy for the BIOBUZZ Robot Simulator: every measured value blank (null), team history removed.

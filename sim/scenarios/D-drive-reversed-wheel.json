@@ -1,0 +1,17 @@
+{
+  "name": "D. Drive: one wheel spins the wrong way",
+  "description": "The right-back drive motor's power wires were swapped at the connector, so it turns backward compared with the other right wheel. Pedro's Mecanum Tuner (program 5) shows it.",
+  "config": "preset",
+  "faults": [
+    {
+      "type": "custom",
+      "text": "Right-back drive motor runs backward (power wires swapped)",
+      "caughtBy": "Program 5, Mecanum Tuner (back right direction)"
+    }
+  ],
+  "drive": {
+    "rightBack": {
+      "mount": 1
+    }
+  }
+}
