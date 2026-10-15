@@ -229,7 +229,7 @@ public final class Guide {
         double rel = Double.NaN, abs = Double.NaN;
         if (key.matches(".*(FlywheelF|TopVelocity)|yawTicksPerDeg.*|podTicksPerMm")) rel = 0.05;
         else if (key.matches(".*(FlywheelP|FlywheelI|IdleVelocity)|yawK[psv]|.*KP|.*Coefficient|coastKV|brakeKV")) rel = 0.30;
-        else if (key.matches(".*ReadyBand.*|gateTravelS")) rel = 0.50;
+        else if (key.matches(".*ReadyBand.*|gateTravelS|rampTravelS")) rel = 0.50;
         else if (key.matches("(front|back)(Hood|Gate)(Min|Max|Closed|Open)|ramp(Stowed|Deployed)")) abs = 0.02;
         else if (key.matches(".*Deg|centerTo.*|.*Pivot[XY]|red.*Cell[XY]|[xy]PodOffset")) abs = 1.0;
         else return null;

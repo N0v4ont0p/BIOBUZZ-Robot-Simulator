@@ -223,6 +223,8 @@ public final class Tuned {
     // ramp servo positions (E-8)
     public static double rampStowed = Double.NaN;
     public static double rampDeployed = Double.NaN;
+    // ramp travel time, fully in to fully out, from a slow-motion video (program 4)
+    public static double rampTravelS = Double.NaN;
 
     // red CELL opening centres, field frame inches (H-1); blue = 180-degree rotation
     public static double redFarCellX = Double.NaN;

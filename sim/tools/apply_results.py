@@ -25,7 +25,7 @@ SIDES = ("front", "back")
 INTO_YAML = ["yawTicksPerDegFront", "yawTicksPerDegBack", "yawMinDeg", "yawMaxDeg", "yawPowerSign", "yawKs", "yawKv",
              "yawTuningVoltage", "yawKp",
              "frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
-             "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS"]
+             "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS"]
 FLYWHEEL = ["FlywheelP", "FlywheelI", "FlywheelD", "FlywheelF", "ReadyBand", "IdleVelocity", "FlywheelVoltage",
             "ReadyBandLow", "ReadyBandHigh", "ReadyBandLowSpeed", "ReadyBandHighSpeed"]
 INTO_YAML += [s + k for s in SIDES for k in FLYWHEEL]

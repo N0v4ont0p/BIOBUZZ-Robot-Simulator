@@ -394,6 +394,7 @@ tuning_constants:
   ramp:
     rampStowed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
     rampDeployed: {value: null, origin: untuned, source: asked, confirmed: true, units: servo 0-1, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8"}
+    rampTravelS: {value: null, origin: untuned, source: asked, confirmed: true, units: s, tuning_procedure_ref: "docs/BIOBUZZ_PREREQUISITES.md E-8 (fully in to fully out, from slow motion)"}
     rampReachIn: {value: null, origin: untuned, source: asked, confirmed: true, units: in, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): how far past the front bumper the deployed ramp takes POLLEN from a FLOWER bottom (R105: stays inside 18 x 24 in)"}
   drive_motion:
     driveAccelInS2: {value: null, origin: untuned, source: asked, confirmed: true, units: in/s^2, tuning_procedure_ref: "CAD (read by AutoTool only, no Java field): measured on a test drive: typical acceleration along a path"}

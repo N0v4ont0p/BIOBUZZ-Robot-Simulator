@@ -28,7 +28,7 @@ def directions(exp):
 
 
 def servo_values(exp, gd):
-    keys = ["frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS",
+    keys = ["frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS",
             "frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax"]
     return {k: round(float(pick(exp, gd, k)), 4) for k in keys}
 

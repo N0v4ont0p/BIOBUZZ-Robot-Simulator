@@ -23,7 +23,7 @@ const START_STEPS = [
     done: c => c.ran(START_PROGRAMS[1])},
   {title: 'Program 3: Yaw Tuner', tabs: ['turret', 'robot'], text: 'Loads after program 2. Point both turrets straight forward BEFORE INIT (the turn buttons on the Turret tab help). Part A by hand, then it moves by itself, ending with the homing test (cross to start): the turrets are driven into their stops.',
     done: c => c.ran(START_PROGRAMS[2])},
-  {title: 'Program 4: Servo Positions', tabs: ['servos', 'robot'], text: 'Press square to move each servo, nudge it with R1/L1, R2/L2, save with cross. Count the gate frames in slow motion.',
+  {title: 'Program 4: Servo Positions', tabs: ['servos', 'robot'], text: 'Press square to move each servo, nudge it with R1/L1, R2/L2, save with cross. Count the gate frames, then the ramp frames, in slow motion.',
     done: c => c.ran(START_PROGRAMS[3])},
   {session: 'Session B, robot on the floor: programs 5 to 7'},
   {title: 'Program 5: Drive Tuning (Pedro, on the Driver Station)', tabs: ['field', 'robot'], text: 'Loads after program 4. A list of 4 parts: 1 wheel directions (robot on blocks), 2 Pinpoint (on the floor, you push it), 3 Foresight (it drives itself), 4 Tests. dpad picks, cross runs. Each part saves its numbers on the robot; the next uses them.',

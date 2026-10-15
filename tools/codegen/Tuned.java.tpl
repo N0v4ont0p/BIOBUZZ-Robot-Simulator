@@ -223,6 +223,8 @@ public final class Tuned {
     // ramp servo positions (E-8)
     public static double rampStowed = {{tuning.rampStowed}};
     public static double rampDeployed = {{tuning.rampDeployed}};
+    // ramp travel time, fully in to fully out, from a slow-motion video (program 4)
+    public static double rampTravelS = {{tuning.rampTravelS}};
 
     // red CELL opening centres, field frame inches (H-1); blue = 180-degree rotation
     public static double redFarCellX = {{tuning.redFarCellX | in_frame:pedro3_field}};

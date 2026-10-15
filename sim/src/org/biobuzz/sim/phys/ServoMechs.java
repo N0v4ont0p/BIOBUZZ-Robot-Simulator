@@ -347,9 +347,18 @@ public class ServoMechs implements Part {
         out.put("rampStowed", band(ramp, o -> o >= ramp.outStopLow - db && o <= ramp.outStopLow + 6 && rampInside(o), String.format(Locale.US,
                 "Ramp stowed stop at position %.3f (%.1f deg past upright). Good: on or near the stop, not buzzing, tip inside the 18 in frame.",
                 ramp.position(ramp.outStopLow), -ramp.outStopLow)));
+        Expected stowed = band(ramp, o -> o >= ramp.outStopLow - db && o <= ramp.outStopLow + 6 && rampInside(o), "");
+        Expected deployed = band(ramp, o -> o <= ramp.outStopHigh + db && rampAtFlower(o), "");
         out.put("rampDeployed", band(ramp, o -> o <= ramp.outStopHigh + db && rampAtFlower(o), String.format(Locale.US,
                 "Ramp deploy stop at position %.3f. Good: tip 0.1-1.5 in off the floor, inside the FLOWER opening and inside 18 x 24 in.",
                 ramp.position(ramp.outStopHigh))));
+        // fully in to fully out: the filmed move when the last one went the whole way, else the servo's own speed
+        double inOut = outAt(ramp, stowed.value), outOut = outAt(ramp, deployed.value);
+        boolean whole = Math.abs(ramp.lastOpenToOut - ramp.lastOpenFromOut) >= 0.8 * Math.abs(outOut - inOut);
+        double rampTravel = whole ? ramp.lastOpenSeconds : ramp.travelSeconds(inOut, outOut) + ServoModel.FRAME_S / 2;
+        out.put("rampTravelS", new Expected(rampTravel, TRAVEL_TOLERANCE_FRAMES / SlowMoCamera.FPS, "s", String.format(Locale.US,
+                "%.1f frames at 240 fps from the ramp's first movement to fully out%s.", rampTravel * SlowMoCamera.FPS,
+                whole ? " (the last time it went all the way out)" : " (its servo speed over the stowed to deployed swing)")));
         for (int i = 0; i < 2; i++) {
             ServoModel s = servos[3 + i];
             int k = i;

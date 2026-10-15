@@ -39,7 +39,7 @@ public class SetupReport extends LinearOpMode {
                 "yawKv", "yawTuningVoltage", "yawKp", "yawPlayDeg", "yawHomeLeftDeg", "yawHomeRightDeg", "yawHomeFastDegS",
                 "yawHomeCreepDegS", "yawHomeCrossDegS"});
         OWNS.put("4 Servo Positions", new String[]{"frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
-                "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS"});
+                "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS"});
         OWNS.put("5 Drive Tuning", new String[]{"xPodOffset", "yPodOffset", "maxAchievableForwardVelocity", "maxAchievableStrafeVelocity",
                 "naturalForwardDeceleration", "naturalStrafeDeceleration", "headingKP", "forwardTranslationalPrimaryKP",
                 "strafeTranslationalPrimaryKP", "coastKV", "brakeKV"});

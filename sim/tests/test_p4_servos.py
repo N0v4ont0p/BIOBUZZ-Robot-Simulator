@@ -165,6 +165,26 @@ def gate_travel(s):
     return front, back
 
 
+def ramp_travel(s):
+    s.wait_text("Ramp travel time")
+    time.sleep(0.5)
+    s.hand("servos", "record", on=True)
+    time.sleep(0.3)
+    tap(s, "square")
+    time.sleep(1.5)
+    s.hand("servos", "record", on=False)
+    clip = s.get("slowmo")
+    n, v = frames_to_open(clip, "ramp")
+    assert v[-1] > v[0] + 90, "the ramp should swing out"
+    for _ in range(n // 10):
+        tap(s, "right_bumper")
+    for _ in range(n % 10):
+        tap(s, "dpad_up")
+    s.wait_text(f"Frames: {n} ")
+    tap(s, "cross")
+    return n
+
+
 def results(s):
     latest = {}
     for row in csv.DictReader(io.StringIO(s.file("biobuzz_results.csv"))):
@@ -176,9 +196,9 @@ def check(s):
     got, exp = results(s), s.get("expected")
     bad = []
     for key in ("frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
-                "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS"):
+                "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS"):
         e = exp[key]
-        slack = 0.0006 if key != "gateTravelS" else 0.0001
+        slack = 0.0006 if not key.endswith("TravelS") else 0.0001
         ok = key in got and abs(got[key] - e["value"]) <= e["tolerance"] + slack
         print(f"  {'ok ' if ok else 'BAD'} {key:16} {got.get(key)!s:8} expected {e['value']:.4f} +- {e['tolerance']:.4f}")
         if not ok:
@@ -197,8 +217,9 @@ def run(s):
     gate(s, 0, "Front gate: closed", "Front gate: open")
     gate(s, 1, "Back gate: closed", "Back gate: open")
     front, back = gate_travel(s)
+    ramp_frames = ramp_travel(s)
     s.wait_text("PROGRAM 4 COMPLETE")
-    print(f"  slow-mo: front gate {front} frames, back gate {back} frames")
+    print(f"  slow-mo: front gate {front} frames, back gate {back} frames, ramp {ramp_frames} frames")
     check(s)
     s.stop()
     s.wait(lambda st: st["ds"]["active"] == "5 Drive Tuning" and st["ds"]["state"] == "INIT", 10, "program 5 auto-loaded")

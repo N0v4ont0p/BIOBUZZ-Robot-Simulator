@@ -207,7 +207,7 @@ const ServoDraw = (() => {
   function band(key) {
     const e = expected && expected[key];
     if (!e || e.value == null) return key + ' ?';
-    return key === 'gateTravelS'
+    return key === 'gateTravelS' || key === 'rampTravelS'
       ? `${key} ${(e.value * 240).toFixed(1)} ± ${(e.tolerance * 240).toFixed(1)} frames`
       : `${key} ${(e.value - e.tolerance).toFixed(3)}–${(e.value + e.tolerance).toFixed(3)}`;
   }

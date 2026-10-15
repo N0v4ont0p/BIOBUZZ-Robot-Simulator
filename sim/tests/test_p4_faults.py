@@ -8,7 +8,7 @@ and the frame count matches its true travel time.
 import time
 
 from harness import running_sim
-from test_p4_servos import BIG, direction, frames_to_open, results, servo, step_until, tap
+from test_p4_servos import BIG, direction, frames_to_open, ramp_travel, results, servo, step_until, tap
 
 SERVO_KEYS = ("frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
               "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen")
@@ -64,7 +64,7 @@ def slow_gate(s):
     s.wait_text("Press START")
     s.start()
     for i in range(len(SERVO_KEYS)):
-        s.wait_text(f"STEP {i + 1} of 11")
+        s.wait_text(f"STEP {i + 1} of 12")
         tap(s, "square")
         time.sleep(0.3)
         tap(s, "cross")
@@ -85,6 +85,7 @@ def slow_gate(s):
         tap(s, "dpad_up")
     s.wait_text(f"Frames: {back} ")
     tap(s, "cross")
+    ramp_travel(s)
     s.wait_text("PROGRAM 4 COMPLETE")
     e = s.get("expected")["gateTravelS"]
     got = results(s)["gateTravelS"]

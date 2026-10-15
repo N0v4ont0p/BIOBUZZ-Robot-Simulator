@@ -102,7 +102,7 @@ Bench.register({
     this.stamp.textContent = `frame ${String(this.i).padStart(4, '0')}   ${t.toFixed(3)} s`;
     el.querySelector('#smFrame').textContent = `frame ${this.i} of ${c.frames.length - 1}`;
     el.querySelector('#smCoach').textContent = ServoDraw.state.coach
-      ? c.channels.map((n, i) => `${n} ${fr[i].toFixed(2)}°`).join(' · ') + ' · ' + ServoDraw.band('gateTravelS') : '';
+      ? c.channels.map((n, i) => `${n} ${fr[i].toFixed(2)}°`).join(' · ') + ' · ' + ServoDraw.band('gateTravelS') + ' · ' + ServoDraw.band('rampTravelS') : '';
   },
   update(el, s) {
     const sv = s.world && s.world.servos;
