@@ -72,7 +72,8 @@ import java.util.List;
  *   <li>The robot follows the leg's path (or a straight line to its target pose from wherever it is).</li>
  *   <li>While it drives: {@link During#INTAKE} runs the intake for the whole path, {@link During#RAMP} also
  *   deploys the ramp. The intake also runs during the previous leg's {@link Leg#carryIntake} time, and on every
- *   leg when the route asks for persistent intake ({@link Route#intakeAlways()}).</li>
+ *   leg when the route asks for persistent intake ({@link Route#intakeAlways()}). After a RAMP leg the ramp stays out
+ *   for that leg's {@link Leg#carryRamp} time into the next leg, so the robot backs out of the FLOWER before it folds.</li>
  *   <li>The drive ends when the path is done or the leg's {@link Leg#timeout} passes.</li>
  *   <li>Then the end: {@link End#SHOOT} holds the pose and fires (below), {@link End#WAIT} holds still for
  *   {@link Leg#waitFor} seconds (the intake and ramp keep doing what they did while driving), {@link End#PARK}
@@ -80,7 +81,8 @@ import java.util.List;
  * </ol>
  *
  * <h2>A shot (End.SHOOT)</h2>
- * Phase 1: hold the pose, intake off, ramp stowed; wait until the robot is stopped ({@link #STOPPED_SPEED},
+ * Phase 1: hold the pose, intake off, ramp stowed (on a RAMP leg it stays out until the next leg has backed away);
+ * wait until the robot is stopped ({@link #STOPPED_SPEED},
  * {@link #STOPPED_TURN_DEG}), the aim is locked and both flywheels are at speed, all for {@link #SETTLE_S}. If
  * that does not happen within {@link #READY_TIMEOUT_S} but the robot is stopped and aimed, fire anyway; if it
  * never stops or has no aim within the leg's {@link Leg#shotTimeout} (default {@link #SHOT_TIMEOUT_S}), skip the
@@ -89,7 +91,8 @@ import java.util.List;
  *
  * <h2>Safety the autos get for free</h2>
  * Never fires while moving or without an aim solution; feeds only at speed; the intake is off during shots;
- * the whole auto stops at {@link #ABORT_AT_S}; the ramp is stowed on every leg that is not RAMP; TeleOp gets
+ * the whole auto stops at {@link #ABORT_AT_S}; the ramp is stowed on every leg that is not RAMP, after the carry
+ * time of the RAMP leg before it; TeleOp gets
  * the alliance and the last pose through {@link MatchState}.
  *
  * <p>Not here yet (add to the Leg, and to SampleAutoPaths, when a real auto or the CAD needs them): firing one
@@ -163,6 +166,8 @@ public abstract class AutoRunner extends OpMode {
         double carryS = 0;
         /** SHOOT: skip the shot if the robot is not stopped and aimed within this long (default {@link #SHOT_TIMEOUT_S}). */
         double shotTimeoutS = SHOT_TIMEOUT_S;
+        /** RAMP: keep the ramp out this long into the next leg (default {@link #RAMP_CARRY_S}). */
+        double rampCarryS = RAMP_CARRY_S;
         /** WAIT: how long to hold still at the end of the path. */
         double waitS = 0;
 
@@ -214,6 +219,15 @@ public abstract class AutoRunner extends OpMode {
             return this;
         }
 
+        /**
+         * RAMP legs: keep the ramp out this long into the next leg. Folding it the moment the leg ends, with the robot
+         * still under the FLOWER, can catch it on the FLOWER; the next leg backs away first.
+         */
+        public Leg carryRamp(double seconds) {
+            rampCarryS = Math.max(0, seconds);
+            return this;
+        }
+
         /** WAIT legs: hold still this long at the end of the path (DECODE held 3 s at the gate with the intake on). */
         public Leg waitFor(double seconds) {
             waitS = Math.max(0, seconds);
@@ -237,6 +251,9 @@ public abstract class AutoRunner extends OpMode {
     private static final double SHOT_TIMEOUT_S = 4.0;
     /** Default leg timeout (s). */
     private static final double LEG_TIMEOUT_S = 7.0;
+    /** Default {@link Leg#carryRamp}: the ramp stays out this long into the leg after a RAMP leg (s). From rest at
+     *  about 30 in/s^2 the robot covers some 4 in in 0.5 s, about the deployed ramp's reach. */
+    public static final double RAMP_CARRY_S = 0.5;
     /** Stop everything at this match time so nothing moves after AUTO (s). */
     private static final double ABORT_AT_S = 28.5;
 
@@ -314,6 +331,8 @@ public abstract class AutoRunner extends OpMode {
     private int shotPhase = 0;
     /** Match time until which the previous leg's carryIntake keeps the intake running. */
     private double carryUntilS = 0;
+    /** Match time at which the ramp folds, after the RAMP leg before (NaN = nothing pending). */
+    private double stowRampAtS = Double.NaN;
     private double fedS = 0, lastFeedS = 0;
     private boolean anchored = false, wasReady = false, frozen = false;
     private final ElapsedTime matchTimer = new ElapsedTime();
@@ -426,6 +445,7 @@ public abstract class AutoRunner extends OpMode {
         } else if (leg != null) {
             runLeg(leg, pose);
         }
+        if (!Double.isNaN(stowRampAtS) && matchTimer.seconds() >= stowRampAtS) stowRamp();
 
         boolean crossed = MatchState.alliance == MatchState.Alliance.RED ? pose.x() > Field.CENTER : pose.x() < Field.CENTER;
         if (crossed) telemetry.addLine("WARNING: robot centre on the opponent side (G402)");
@@ -472,7 +492,8 @@ public abstract class AutoRunner extends OpMode {
             switch (leg.end) {
                 case SHOOT:
                     follower.hold(pose);
-                    stowRamp();
+                    // a RAMP leg's ramp is still in the FLOWER: it folds once the next leg has backed away
+                    if (leg.during != During.RAMP) stowRamp();
                     shotPhase = 1;
                     anchored = false;
                     wasReady = false;
@@ -570,9 +591,11 @@ public abstract class AutoRunner extends OpMode {
             finish("done");
             return;
         }
+        Leg prev = legIndex > 0 ? legs.get(legIndex - 1) : null;
         Leg leg = legs.get(legIndex);
         boolean rampMissing = leg.during == During.RAMP && !ramp.set(true);
-        if (leg.during != During.RAMP) stowRamp();
+        if (leg.during == During.RAMP) stowRampAtS = Double.NaN;
+        else if (ramp.deployed() && Double.isNaN(stowRampAtS)) stowRampAtS = matchTimer.seconds() + (prev != null && prev.during == During.RAMP ? prev.rampCarryS : 0);
         Pose from = follower.pose();
         follower.follow(leg.path != null ? leg.path : Paths.line(from, leg.target).linear(from, leg.target));
         legTimer.reset();
@@ -594,6 +617,7 @@ public abstract class AutoRunner extends OpMode {
 
     /** Stows the ramp; only moves the servo if the ramp is out. */
     private void stowRamp() {
+        stowRampAtS = Double.NaN;
         if (ramp.deployed()) ramp.set(false);
     }
 

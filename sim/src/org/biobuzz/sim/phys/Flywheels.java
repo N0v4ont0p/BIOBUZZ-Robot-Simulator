@@ -18,6 +18,8 @@ import java.util.Random;
 public class Flywheels implements Part {
     public static final String[] IDS = {"flywheel.front", "flywheel.back"};
     public static final double TICKS_PER_RAD = 28 / (2 * Math.PI);
+    // the hub's velocity reading: encoder counts over this window (MotorPort), so it reads in 1 / window steps
+    private static final double READ_WINDOW_S = 0.05;
     private static final double WOBBLE_TAU = 0.03, CONTACT_PATH_M = 0.09, MIN_RAD_S = 20;
     private static final double ELECTRONICS_AMPS = 0.6;
 
@@ -239,9 +241,17 @@ public class Flywheels implements Part {
             out.put(s + "FlywheelP", new Expected(f * 3.3, f * 3.3, "", "picked by program 7's shots: anything from F/20 to 6.4 x F"));
             out.put(s + "FlywheelI", new Expected(f * 0.33, f * 0.33, "", "P / 10"));
             out.put(s + "FlywheelD", new Expected(0, 0.001, "", "0"));
-            double band = 1.5 * (20 + 2.5 * wobbleTicks[i]);
-            out.put(s + "ReadyBand", new Expected(band, 0.5 * band, "ticks/s",
-                    String.format(java.util.Locale.US, "1.5 x (20 ticks/s hub counting step + %.0f ticks/s true wheel wobble x 2.5)", wobbleTicks[i])));
+            // what program 7 measures (WobbleBand): 1.5 x the larger of one reading step and 2.5 x the spread of the
+            // readings at 70 % of top speed. The spread: the wobble as the hub's 50 ms counting window averages it (an
+            // Ornstein-Uhlenbeck wobble with time constant WOBBLE_TAU keeps this share of its variance), plus the
+            // readings landing on two neighbouring 20 ticks/s steps (a sixth of a step squared on average)
+            double w70 = wobbleTicks[i] * (1 + wobbleGrowth[i] * Math.max(0, 0.7 * top / 1000 - 1));
+            double r = WOBBLE_TAU / READ_WINDOW_S, kept = 2 * r * (1 - r * (1 - Math.exp(-1 / r)));
+            double step = 1 / READ_WINDOW_S, spread = Math.sqrt(kept * w70 * w70 + step * step / 6);
+            double band = 1.5 * Math.max(step, 2.5 * spread);
+            out.put(s + "ReadyBand", new Expected(band, 0.5 * band, "ticks/s", String.format(java.util.Locale.US,
+                    "1.5 x the larger of one %.0f ticks/s reading step and 2.5 x the reading spread (%.1f ticks/s: %.1f ticks/s wheel wobble at 70%% of top speed, seen through the hub's %.0f ms window, plus the reading steps)",
+                    step, spread, w70, READ_WINDOW_S * 1000)));
             out.put(s + "IdleVelocity", new Expected(0.35 * top, 0.35 * top, "ticks/s", "anything from 0 to about 70% of top speed"));
             if (lastOutcome[i] >= 0) {
                 out.put(s + "FlywheelThrowsOut", new Expected(lastOutcome[i], 0, "0/1", lastOutcome[i] == 1

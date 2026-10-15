@@ -26,8 +26,8 @@ import java.util.Locale;
 // For each flywheel, front then back:
 //   1 top speed at full power, once a 1 s average stops rising -> F = 32767 / top speed, P = F / 10, I = P / 10,
 //     D = 0 (the FIRST / REV velocity PIDF starting rule for the Control Hub's built-in velocity control);
-//   2 hold a speed; once it has settled near the target -> ready band = 1.5 x the largest wobble around the
-//     average + how far the average is off the target;
+//   2 hold a speed; once it has settled near the target -> ready band from the spread of the readings over 2 s
+//     (WobbleBand: 1.5 x the larger of one reading step and 2.5 standard deviations) + how far the average is off;
 //   3 fire one element (gate + feed, as a match shot) -> how far the speed drops, how fast it is back and whether
 //     it wobbles past the target; after each shot FlywheelAutoTune picks the next P and the driver presses cross,
 //     loads the next element and fires, until it has found and checked a P (dpad = set P by hand instead).
@@ -44,7 +44,7 @@ public class FlywheelTuner extends LinearOpMode {
     private static final double TEST_SPEED_SHARE = 0.7;
     // wobble is measured only after the speed has stayed within HOLD_NEAR_SHARE of the target for HOLD_NEAR_S
     private static final double HOLD_NEAR_SHARE = 0.05, HOLD_NEAR_S = 1.0, HOLD_SETTLE_MAX_S = 6.0;
-    private static final double HOLD_MEASURE_S = 2.0, BAND_FACTOR = 1.5;
+    private static final double HOLD_MEASURE_S = 2.0;
     private static final double FEED_TEST_POWER = 0.6;
     private static final double RECOVERED_HOLD_S = 0.2, RECOVERY_WATCH_S = 2.0;
     // out of the band for less than OUT_BLIP_S = counting noise; steady must hold for the last STEADY_PROOF_S
@@ -102,7 +102,8 @@ public class FlywheelTuner extends LinearOpMode {
         int n = 0;
         double[] top = new double[2], f = new double[2], p = new double[2], band = new double[2], idle = new double[2], volts = new double[2];
         double voltSum = 0;
-        double peak = 0, target = 0, offset = 0, low = 0, high = 0, measureFrom = -1;
+        double spread = 0, step = 0, target = 0, offset = 0, measureFrom = -1;
+        WobbleBand wobble = new WobbleBand();
         double lastWindow = Double.NaN, windowEnd = 0;
         double dip = 0, recoveryS = -1, overshoot = 0, inBandSince = -1;
         int shotPhase = 0, shots = 0;
@@ -240,7 +241,7 @@ public class FlywheelTuner extends LinearOpMode {
                             spin(wheel, p[side], f[side], target);
                             run = Run.RUNNING;
                             timer.reset();
-                            peak = 0;
+                            spread = 0;
                             offset = 0;
                             inBandSince = -1;
                             measureFrom = -1;
@@ -255,30 +256,24 @@ public class FlywheelTuner extends LinearOpMode {
                             if (settled || t >= HOLD_SETTLE_MAX_S) {
                                 if (!settled) note = "the speed did not stay within 5% of the target: wobble measured anyway";
                                 measureFrom = t;
-                                sum = 0;
-                                n = 0;
-                                low = Double.POSITIVE_INFINITY;
-                                high = Double.NEGATIVE_INFINITY;
+                                wobble = new WobbleBand();
                             }
                             g.say("Waiting for the speed to settle near the target...");
                         } else {
-                            sum += velocity;
-                            n++;
-                            low = Math.min(low, velocity);
-                            high = Math.max(high, velocity);
+                            wobble.add(velocity);
                             g.say("Measuring the wobble...");
                             if (t >= measureFrom + HOLD_MEASURE_S) {
-                                double mean = sum / n;
-                                peak = Math.max(high - mean, mean - low);
-                                offset = mean - target;
+                                spread = wobble.spread();
+                                step = wobble.step();
+                                offset = wobble.mean() - target;
                                 // ready() compares the speed with the target, so the band also covers the average's offset
-                                band[side] = Math.max(1, Math.ceil(BAND_FACTOR * peak + Math.abs(offset)));
+                                band[side] = wobble.band(target);
                                 run = Run.DONE;
                             }
                         }
                         g.value("Target / speed", String.format(Locale.US, "%.0f / %.0f ticks/s", target, velocity));
                     } else {
-                        g.value("Largest wobble", String.format(Locale.US, "%.0f ticks/s around its average", peak));
+                        g.value("Wobble", String.format(Locale.US, "%.1f ticks/s (standard deviation); readings in %.0f ticks/s steps", spread, step));
                         g.value("Average off target", String.format(Locale.US, "%+.0f ticks/s", offset));
                         g.value("Ready band", String.format(Locale.US, "%.0f ticks/s (within this = ready to fire)", band[side]));
                         boolean shrank = bandAgain[side] && band[side] < BAND_SHRINK_CHECK * firstBand[side];
@@ -291,7 +286,7 @@ public class FlywheelTuner extends LinearOpMode {
                             run = Run.RUNNING;
                             spin(wheel, p[side], f[side], target);
                             timer.reset();
-                            peak = 0;
+                            spread = 0;
                             offset = 0;
                             inBandSince = -1;
                             measureFrom = -1;
@@ -434,7 +429,7 @@ public class FlywheelTuner extends LinearOpMode {
                                 run = Run.RUNNING;
                                 spin(wheel, p[side], f[side], target);
                                 timer.reset();
-                                peak = 0;
+                                spread = 0;
                                 offset = 0;
                                 inBandSince = -1;
                                 measureFrom = -1;
@@ -508,7 +503,7 @@ public class FlywheelTuner extends LinearOpMode {
                             run = Run.RUNNING;
                             spin(wheel, p[side], f[side], target);
                             timer.reset();
-                            peak = 0;
+                            spread = 0;
                             offset = 0;
                             inBandSince = -1;
                             measureFrom = -1;

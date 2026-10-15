@@ -25,13 +25,13 @@ import java.util.Locale;
 // The band per speed is saved only when every check passes (both holds settled, each band under 10 % of its speed,
 // the 70 % band from program 7 fits between them within 40 %, all four shots steady); if the two bands are within
 // 25 % of each other one band is enough and both ends are saved as program 7's band (so nothing changes). A band is
-// never narrower than program 7's: a 2 s wobble reading now and then comes out low, and a too narrow band would hold
+// never narrower than program 7's: a too narrow band would hold
 // shots back in TeleOp. Launcher.ready() then uses the band of the target speed, in a straight line between the two.
 @TeleOp(name = "7 Flywheel Tuner: shot-speed check", group = "19859 Setup")
 public class FlywheelSpeedCheck extends LinearOpMode {
     // test procedure settings, not robot measurements (the same as program 7's)
     // settled = within NEAR_SHARE for NEAR_S (2 s: with 1 s the tail of the spin-up now and then made a band twice too wide)
-    private static final double NEAR_SHARE = 0.05, NEAR_S = 2.0, SETTLE_MAX_S = 6.0, MEASURE_S = 2.0, BAND_FACTOR = 1.5;
+    private static final double NEAR_SHARE = 0.05, NEAR_S = 2.0, SETTLE_MAX_S = 6.0, MEASURE_S = 2.0;
     private static final double FEED_TEST_POWER = 0.6, WATCH_S = 2.0, OUT_BLIP_S = 0.05, STEADY_PROOF_S = 0.3, ARRIVED_S = 0.2;
     private static final double[] IDLE_FRACTIONS = {0, 0.2, 0.35, 0.5, 0.65};
     private static final double IDLE_CAP = 0.65, IDLE_SETTLE_S = 0.3, IDLE_SETTLE_MAX_S = 3.0, IDLE_UP_MAX_S = 3.0;
@@ -94,8 +94,9 @@ public class FlywheelSpeedCheck extends LinearOpMode {
         double[][] climb = new double[2][IDLE_FRACTIONS.length];
         String[] verdict = new String[2];
         // measurement state
-        double inSince = -1, from = -1, sum = 0, lo = 0, hi = 0, target = 0;
-        int n = 0, shotIndex = 0, shotPhase = 0, idleIndex = 0, idleLeg = 0;
+        double inSince = -1, from = -1, target = 0;
+        WobbleBand wobbleBand = new WobbleBand();
+        int shotIndex = 0, shotPhase = 0, idleIndex = 0, idleLeg = 0;
         double dip = 0, steadyFrom = -1, outSince = -1, stepFrom = -1, spunAt = Double.NaN;
         double[] worstClimb = new double[IDLE_FRACTIONS.length];
         String note = "";
@@ -136,21 +137,14 @@ public class FlywheelSpeedCheck extends LinearOpMode {
                         if (settled || t >= SETTLE_MAX_S) {
                             settledAt[side][at] = settled;
                             from = t;
-                            sum = 0;
-                            n = 0;
-                            lo = Double.POSITIVE_INFINITY;
-                            hi = Double.NEGATIVE_INFINITY;
+                            wobbleBand = new WobbleBand();
                         }
                         g.say("Waiting for the speed to settle near " + Math.round(target) + " ticks/s...");
                     } else {
-                        sum += velocity;
-                        n++;
-                        lo = Math.min(lo, velocity);
-                        hi = Math.max(hi, velocity);
+                        wobbleBand.add(velocity);
                         g.say("Measuring the wobble...");
                         if (t >= from + MEASURE_S) {
-                            double mean = sum / n;
-                            bandAt[side][at] = Math.max(1, Math.ceil(BAND_FACTOR * Math.max(hi - mean, mean - lo) + Math.abs(mean - target)));
+                            bandAt[side][at] = wobbleBand.band(target);
                             running = false;
                             step = at == 0 ? Step.HOLD_HIGH : Step.SHOTS;
                             shotIndex = 0;
