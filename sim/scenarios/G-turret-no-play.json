@@ -1,7 +1,0 @@
-{
-  "name": "G. Test robot: turret without gear play",
-  "description": "A perfect robot whose turret gears have no free play. Used by the turret homing test, where the stops it homes on are the hidden turret's true stops. Go straight to the Yaw Tuner.",
-  "config": "preset",
-  "turret": {"playFrontDeg": 0, "playBackDeg": 0},
-  "faults": []
-}

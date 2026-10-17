@@ -25,8 +25,8 @@ import java.util.Map;
 // is finished it loads the next one by itself as soon as STOP is pressed (nothing moves until START is pressed on the new one).
 public final class Guide {
     public static final String[] PROGRAMS = {
-            "1 Check Devices", "2 Motor Directions", "3 Yaw Tuner", "4 Servo Positions", "5 Drive Tuning",
-            "6 Position Check", "7 Flywheel Tuner", "8 Front Shot Tuner", "9 Back Shot Tuner"};
+            "1 Check Devices", "2 Motor Directions", "3 Turret Servos", "4 Servo Positions", "5 Drive Tuning",
+            "6 Position Check", "7 Flywheel Tuner", "8 Back Shot Tuner", "9 Front Shot Tuner"};
     public static final String AFTER_LAST = "BIOBUZZ TeleOp";
     public static final String RESULTS_FILE = LiveResults.FILE;
     private static final int BAR = 12;
@@ -227,10 +227,10 @@ public final class Guide {
         }
         if (Double.isNaN(b) || Double.isNaN(n)) return null;
         double rel = Double.NaN, abs = Double.NaN;
-        if (key.matches(".*(FlywheelF|TopVelocity)|yawTicksPerDeg.*|podTicksPerMm")) rel = 0.05;
-        else if (key.matches(".*(FlywheelP|FlywheelI|IdleVelocity)|yawK[psv]|.*KP|.*Coefficient|coastKV|brakeKV")) rel = 0.30;
-        else if (key.matches(".*ReadyBand.*|gateTravelS|rampTravelS")) rel = 0.50;
-        else if (key.matches("(front|back)(Hood|Gate)(Min|Max|Closed|Open)|ramp(Stowed|Deployed)")) abs = 0.02;
+        if (key.matches(".*(FlywheelF|TopVelocity)|.*YawPerDeg|podTicksPerMm")) rel = 0.05;
+        else if (key.matches(".*(FlywheelP|FlywheelI|IdleVelocity)|.*KP|.*Coefficient|coastKV|brakeKV")) rel = 0.30;
+        else if (key.matches(".*ReadyBand.*|gateTravelS|ramp(Out|In)S|yawDegPerS")) rel = 0.50;
+        else if (key.matches("(front|back)Gate2?(Closed|Open)|(front|back)YawForward")) abs = 0.02;
         else if (key.matches(".*Deg|centerTo.*|.*Pivot[XY]|red.*Cell[XY]|[xy]PodOffset")) abs = 1.0;
         else return null;
         double change = Math.abs(n - b);

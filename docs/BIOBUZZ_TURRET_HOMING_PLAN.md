@@ -1,3 +1,5 @@
+Superseded 2026-10-17: see docs/HARDWARE_UPDATE_PLAN.md
+
 # Turret homing: plan and what was built
 
 Status: built 2026-10-08 (programs 3, 8, 9 and TeleOp; simulator tests `test_homing.py` and `test_p3_yaw.py`). Two

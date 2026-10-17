@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// The robot's ShotCurve from the command line, for sim/tests/test_shot_curve.py. stdin: one "distance,speed,hood,feed"
-// row per line, then "?" and one distance per line. stdout: per distance "lines speed,hood,feed | smooth speed,hood,feed".
+// The robot's ShotCurve from the command line, for sim/tests/test_shot_curve.py. stdin: one "distance,speed,feed" row per
+// line, then "?" and one distance per line. stdout: per distance "d lines-speed lines-feed smooth-speed smooth-feed".
 public class CurveCli {
     public static void main(String[] args) throws Exception {
         BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
@@ -25,15 +25,14 @@ public class CurveCli {
                 ask.add(Double.parseDouble(line));
             } else {
                 String[] c = line.split(",");
-                rows.add(new double[]{Double.parseDouble(c[0]), Double.parseDouble(c[1]), Double.parseDouble(c[2]), Double.parseDouble(c[3])});
+                rows.add(new double[]{Double.parseDouble(c[0]), Double.parseDouble(c[1]), Double.parseDouble(c[2])});
             }
         }
         double[][] t = rows.toArray(new double[0][]);
         ShotCurve lines = new ShotCurve(t, false), smooth = new ShotCurve(t, true);
         System.out.println("# " + smooth.describe() + (smooth.pulled().isEmpty() ? "" : " pulled " + smooth.pulled()));
         for (double d : ask) {
-            System.out.println(String.format(Locale.US, "%.3f %.4f %.5f %.4f %.4f %.5f %.4f", d, lines.speed(d), lines.hood(d), lines.feed(d),
-                    smooth.speed(d), smooth.hood(d), smooth.feed(d)));
+            System.out.println(String.format(Locale.US, "%.3f %.4f %.4f %.4f %.4f", d, lines.speed(d), lines.feed(d), smooth.speed(d), smooth.feed(d)));
         }
     }
 }

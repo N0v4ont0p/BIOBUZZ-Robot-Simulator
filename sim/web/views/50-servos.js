@@ -1,6 +1,7 @@
-// Hoods, ramp and gates from the side, the way you look at them during program 4: watch a servo move, hear it buzz
-// against a stop, see the ramp against the size outlines and the FLOWER, hold an element against a gate. "Coach"
-// shows what you can't see on a real robot (angles, gaps, current, heat, the good range of each step).
+// Ramp and gates from the side, the way you look at them during programs 2 and 4 (no hoods: team 2026-10-17). The ramp
+// hangs on strings from a spool its two continuous servos turn: watch it go out and in, see if it creeps down, hear the
+// servos buzz when they strain or fight. The back gate has a servo each side of one arm. Hold an element against a
+// gate. "Coach" shows what you can't see on a real robot (angles, gaps, current, heat, the good range of each step).
 const ServoDraw = (() => {
   const state = {coach: false, sound: true};
   try {
@@ -82,39 +83,6 @@ const ServoDraw = (() => {
     };
   }
 
-  function hoodScene(parent, f) {
-    const g = Svg.el('g', {}, parent);
-    const wheel = Svg.el('circle', {cx: f.X(0), cy: f.Y(0), fill: 'var(--part)', 'fill-opacity': 0.35, stroke: 'var(--metal)', 'stroke-width': 2}, g);
-    Svg.el('circle', {cx: f.X(0), cy: f.Y(0), r: 4, fill: 'var(--metal)'}, g);
-    const lowBlock = Svg.el('rect', {width: 14, height: 14, rx: 2, fill: 'var(--metal)'}, g);
-    const highBlock = Svg.el('rect', {width: 14, height: 14, rx: 2, fill: 'var(--metal)'}, g);
-    const plate = Svg.el('polyline', {fill: 'none', stroke: 'var(--accent)', 'stroke-width': 7, 'stroke-linecap': 'round'}, g);
-    const tab = Svg.el('circle', {r: 6, fill: 'var(--accent)'}, g);
-    const shot = Svg.el('line', {stroke: 'var(--muted)', 'stroke-width': 2, 'stroke-dasharray': '6 5'}, g);
-    const body = servoBody(g, 30, 20);
-    body.at(f.X(-4.4), f.Y(-2.4));
-    Svg.text(g, f.X(0), f.Y(-2.6), 'flywheel', {'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)'});
-    const p = (r, psi) => [f.X(r * Math.cos(rad(psi))), f.Y(r * Math.sin(rad(psi)))];
-    const place = (el, r, psi) => { const [x, y] = p(r, psi); el.setAttribute('x', x - 7); el.setAttribute('y', y - 7); };
-    return {
-      update(st, geo) {
-        const rw = geo.wheelR, rh = geo.wheelY, exit = 90 + st.out;
-        wheel.setAttribute('r', f.S(rw));
-        const pts = [];
-        for (let k = 0; k <= 16; k++) pts.push(p(rh, exit + k * 75 / 16).join(','));
-        plate.setAttribute('points', pts.join(' '));
-        const [tx, ty] = p(rh + 0.35, exit + 75);
-        tab.setAttribute('cx', tx); tab.setAttribute('cy', ty);
-        place(lowBlock, rh + 0.35, 165 + st.outStopLow - 5);
-        place(highBlock, rh + 0.35, 165 + st.outStopHigh + 5);
-        const [ex, ey] = p(rh, exit);
-        shot.setAttribute('x1', ex); shot.setAttribute('y1', ey);
-        shot.setAttribute('x2', ex + f.S(3.2 * Math.cos(rad(st.out)))); shot.setAttribute('y2', ey - f.S(3.2 * Math.sin(rad(st.out))));
-        body.update(st);
-      },
-    };
-  }
-
   function rampScene(parent, f) {
     const g = Svg.el('g', {}, parent);
     const box = Svg.el('rect', {x: f.X(-12), y: f.Y(0), width: f.S(6), height: f.S(2), fill: '#8d6e63', opacity: 0.6}, g);
@@ -137,9 +105,14 @@ const ServoDraw = (() => {
     Svg.text(g, f.X(9.4), f.Y(2.6) + 12, '3.55 in', {'font-size': 10, fill: 'var(--good)', 'text-anchor': 'end'});
     const ramp = Svg.el('line', {stroke: 'var(--accent)', 'stroke-width': f.S(0.4), 'stroke-linecap': 'round'}, g);
     const pin = Svg.el('circle', {r: 4, fill: 'var(--ink)'}, g);
+    // the strings run from a spool on the frame down to the ramp's middle
+    const spoolX = -1.2, spoolY = 12.5;
+    const string = Svg.el('line', {stroke: 'var(--ink)', 'stroke-width': 1.2, 'stroke-dasharray': '2 2'}, g);
+    Svg.el('circle', {cx: f.X(spoolX), cy: f.Y(spoolY), r: f.S(0.5), fill: 'var(--metal)'}, g);
     const body = servoBody(g, 30, 20);
+    body.at(f.X(spoolX) - 22, f.Y(spoolY));
     return {
-      update(st, geo, onBox) {
+      update(st, geo, onBox, servoSt) {
         const face = geo.flowerFaceIn, top = geo.flowerOpeningIn;
         flower.setAttribute('d', `M${f.X(face)},${f.Y(0)} L${f.X(face)},${f.Y(0.15)} L${f.X(face + 0.3)},${f.Y(0.15)} L${f.X(face + 0.3)},${f.Y(0)} Z ` +
           `M${f.X(face)},${f.Y(top)} L${f.X(10)},${f.Y(top)} L${f.X(10)},${f.Y(12)} L${f.X(face)},${f.Y(12)} Z`);
@@ -149,8 +122,11 @@ const ServoDraw = (() => {
         ramp.setAttribute('x1', f.X(st.pivotX)); ramp.setAttribute('y1', f.Y(st.pivotY));
         ramp.setAttribute('x2', f.X(st.tipX)); ramp.setAttribute('y2', f.Y(st.tipY));
         pin.setAttribute('cx', f.X(st.pivotX)); pin.setAttribute('cy', f.Y(st.pivotY));
-        body.at(f.X(st.pivotX) - 26, f.Y(st.pivotY));
-        body.update(st);
+        const mx = (st.pivotX + st.tipX) / 2, my = (st.pivotY + st.tipY) / 2;
+        string.setAttribute('x1', f.X(spoolX)); string.setAttribute('y1', f.Y(spoolY));
+        string.setAttribute('x2', f.X(mx)); string.setAttribute('y2', f.Y(my));
+        string.setAttribute('stroke-dasharray', st.slack > 0.02 ? '1 5' : '2 2');
+        body.update(servoSt);
       },
     };
   }
@@ -190,8 +166,8 @@ const ServoDraw = (() => {
     const sv = s.world && s.world.servos;
     if (!sv) return;
     let loud = 0;
-    for (const id of ['hood.front', 'hood.back', 'ramp', 'gate.front', 'gate.back']) {
-      if (sv[id] && sv[id].stalled) loud = Math.max(loud, sv[id].buzz);
+    for (const id of ['ramp.left', 'ramp.right', 'gate.front', 'gate.back', 'gate.back2']) {
+      if (sv[id] && sv[id].buzz > 0.12) loud = Math.max(loud, sv[id].buzz);
     }
     buzz.level(state.sound && loud > 0 ? 0.03 + 0.12 * loud : 0);
   });
@@ -207,32 +183,31 @@ const ServoDraw = (() => {
   function band(key) {
     const e = expected && expected[key];
     if (!e || e.value == null) return key + ' ?';
-    return key === 'gateTravelS' || key === 'rampTravelS'
+    return key === 'gateTravelS' || key === 'rampOutS' || key === 'rampInS'
       ? `${key} ${(e.value * 240).toFixed(1)} ± ${(e.tolerance * 240).toFixed(1)} frames`
       : `${key} ${(e.value - e.tolerance).toFixed(3)}–${(e.value + e.tolerance).toFixed(3)}`;
   }
 
-  return {state, frame, gateScene, hoodScene, rampScene, buzz, coachExpected, band};
+  return {state, frame, gateScene, rampScene, buzz, coachExpected, band};
 })();
 
 Bench.register({
   id: 'servos', title: 'Servos', order: 50,
   mount(el) {
     const D = ServoDraw;
-    el.innerHTML = `<h3>Hoods, ramp and gates (side views)</h3>
-      <p class="hint">Program 4 moves one servo at a time. Watch where it goes and listen: a servo told to push past its stop
-        buzzes and gets hot. For a gate, put an element against it: closed must hold it clear of the flywheel, open must
-        let it roll through without touching.</p>
+    el.innerHTML = `<h3>Ramp and gates (side views)</h3>
+      <p class="hint">Program 4 moves one gate servo at a time. Watch where it goes and listen: a servo told to push past its
+        stop, or against the other back-gate servo, buzzes and gets hot. For a gate, put an element against it: closed must
+        hold it clear of the flywheel, open must let it roll through without touching. The ramp only knows time: watch it
+        go out and come up, and whether it creeps down when it should stay up.</p>
       <div class="controls">
         <label><input type="checkbox" id="srvSound"> Sound (buzzing)</label>
         <label><input type="checkbox" id="srvCoach"> <span class="srv-coach-on">Coach</span>: show the hidden numbers</label>
       </div>
       <div class="srv-grid">
-        <div class="srv-card" data-id="hood.front"><h4>Front hood <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
-        <div class="srv-card" data-id="hood.back"><h4>Back hood <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
         <div class="srv-card wide" data-id="ramp"><h4>Ramp (front of the robot is right) <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
         <div class="srv-card" data-id="gate.front"><h4>Front gate <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
-        <div class="srv-card" data-id="gate.back"><h4>Back gate <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
+        <div class="srv-card" data-id="gate.back"><h4>Back gate (2 servos) <span class="feel"></span></h4><svg></svg><div class="controls"></div><div class="say"></div><div class="coach"></div></div>
       </div>`;
     const sound = el.querySelector('#srvSound'), coach = el.querySelector('#srvCoach');
     sound.checked = D.state.sound;
@@ -252,12 +227,13 @@ Bench.register({
       const c = {card, svg, feel: card.querySelector('.feel'), say: card.querySelector('.say'), coach: card.querySelector('.coach')};
       const mech = Svg.el('g', {}, svg);
       c.mech = mech;
-      if (id.startsWith('hood')) {
-        c.f = D.frame(svg, -6, -3, 6, 6.6, 26);
-        c.scene = D.hoodScene(mech, c.f);
-      } else if (id === 'ramp') {
+      if (id === 'ramp') {
         c.f = D.frame(svg, -20, -2.6, 10, 19.5, 21);
         c.scene = D.rampScene(mech, c.f);
+        controls.innerHTML = `<button class="btn secondary" data-a="stowRamp">Fold the ramp up by hand</button>
+          <button class="btn secondary" data-a="remountRampRight" hidden>Turn the right ramp servo round on its mount</button>`;
+        controls.querySelectorAll('[data-a]').forEach((b) => { b.onclick = () => App.hand('servos', b.dataset.a, {}); });
+        c.remount = controls.querySelector('[data-a="remountRampRight"]');
       } else {
         const side = id === 'gate.front' ? 0 : 1;
         c.f = D.frame(svg, -8, -1, 2.8, 7.2, 30);
@@ -281,7 +257,12 @@ Bench.register({
       rep.className = 'btn danger';
       rep.textContent = 'Replace the burnt servo';
       rep.hidden = true;
-      rep.onclick = () => App.hand('servos', 'replaceServo', {id});
+      // the ramp and the back gate have two servos: replace whichever is burnt
+      rep.onclick = () => {
+        const ids = id === 'ramp' ? ['ramp.left', 'ramp.right'] : id === 'gate.back' ? ['gate.back', 'gate.back2'] : [id];
+        const sv = (App.last && App.last.world && App.last.world.servos) || {};
+        for (const k of ids) if (sv[k] && sv[k].burnedOut) App.hand('servos', 'replaceServo', {id: k});
+      };
       controls.appendChild(rep);
       c.replace = rep;
       this.cards[id] = c;
@@ -292,26 +273,32 @@ Bench.register({
     if (!sv) return;
     const D = ServoDraw, geo = sv.geometry, coach = D.state.coach;
     D.coachExpected();
+    const n = (v, d = 1) => (v == null ? '?' : Number(v).toFixed(d));
     for (const id in this.cards) {
-      const c = this.cards[id], st = sv[id];
-      if (!st) continue;
-      c.mech.classList.toggle('srv-shake', st.stalled);
-      c.feel.textContent = 'touch: ' + st.feel;
-      c.replace.hidden = !st.burnedOut;
-      let say = st.burnedOut ? 'It went quiet and smells burnt: this servo is dead. Replace it, then set its positions again.'
-        : st.stalled ? 'BZZZZ: it is pushing against something and not moving.' : !st.powered ? 'No signal: the servo is limp. A program has to send it a position first (program 4: press square on that step).' : '';
+      const c = this.cards[id];
+      // the servos behind this card: two for the ramp and the back gate
+      const parts = id === 'ramp' ? [sv['ramp.left'], sv['ramp.right']] : id === 'gate.back' ? [sv['gate.back'], sv['gate.back2']] : [sv[id]];
+      if (parts.some((p) => !p)) continue;
+      const st = id === 'ramp' ? sv.ramp : parts[0];
+      const loud = Math.max(...parts.map((p) => p.buzz));
+      const hot = parts.reduce((a, p) => (p.heat > a.heat ? p : a));
+      c.mech.classList.toggle('srv-shake', loud > 0.12);
+      c.feel.textContent = 'touch: ' + hot.feel;
+      c.replace.hidden = !parts.some((p) => p.burnedOut);
+      const common = parts.map((p, k) => (parts.length > 1 ? `servo ${k + 1}: ` : '') + `${n(p.amps, 2)} A, push ${Math.round(p.buzz * 100)}%, heat ${Math.round(p.heat * 100)}%`).join(' · ');
+      let say = parts.some((p) => p.burnedOut) ? 'It went quiet and smells burnt: a servo here is dead. Replace it, then set its positions again.'
+        : loud > 0.12 ? 'BZZZZ: it is pushing against something and not moving.' : '';
       let coachText = '';
-      const n = (v, d = 1) => (v == null ? '?' : Number(v).toFixed(d));
-      const common = `horn ${n(st.deg)}° · ${n(st.amps, 2)} A · push ${Math.round(st.buzz * 100)}% · heat ${Math.round(st.heat * 100)}%`;
-      if (id.startsWith('hood')) {
-        c.scene.update(st, geo);
-        const side = id === 'hood.front' ? 'front' : 'back';
-        coachText = `launch ${n(st.out)}° (stops ${n(st.outStopLow)}–${n(st.outStopHigh)}°) · ${common} · good: ${D.band(side + 'HoodMin')}, ${D.band(side + 'HoodMax')}`;
-      } else if (id === 'ramp') {
-        c.scene.update(st, geo, s.world.onBox);
-        coachText = `tip ${n(st.tipX, 2)} in forward, ${n(st.tipY, 2)} in up · inside 18 in: ${st.inside ? 'yes' : 'no'} · at the FLOWER: ${st.atFlower ? 'yes' : 'no'} · ${common} · good: ${D.band('rampStowed')}, ${D.band('rampDeployed')}`;
+      if (id === 'ramp') {
+        c.scene.update(st, geo, s.world.onBox, hot);
+        c.remount.hidden = !st.fighting;
+        if (st.fighting) say = 'The two ramp servos turn against each other: one is mounted the same way as the other, not mirrored.';
+        else if (!say && !parts.some((p) => p.powered)) say = st.share > 0.01 ? 'No signal: the servos are limp.' : 'No signal: the servos are limp. The ramp is folded up.';
+        else if (!say && st.slack > 0.02) say = 'It ran past fully out: the strings hang slack. They wind in first before the ramp lifts.';
+        coachText = `out ${Math.round(st.share * 100)}% (${n(st.outDeg)}° from upright) · tip ${n(st.tipX, 2)} in forward, ${n(st.tipY, 2)} in up · inside 18 in: ${st.inside ? 'yes' : 'no'} · at the FLOWER: ${st.atFlower ? 'yes' : 'no'} · slack ${n(st.slack, 2)} · drooped ${n(st.droopSeconds)} s while driving · power ${n(parts[0].power, 2)} / ${n(parts[1].power, 2)} · ${common} · good: ${D.band('rampOutS')}, ${D.band('rampInS')}`;
       } else {
         const side = id === 'gate.front' ? 'front' : 'back';
+        if (!say && !parts.some((p) => p.powered)) say = 'No signal: the servo is limp. A program has to send it a position first (program 4: press square on that step).';
         c.scene.update(st, geo, st.out, st.element ? st.elementX : null);
         // close-up on the nearest point between the element (or where it would sit) and the wheel
         const ex = st.element ? st.elementX : -2, ey = geo.elementR, wx = 0, wy = geo.wheelY;
@@ -323,7 +310,9 @@ Bench.register({
         const vis = st.element ? 'visible' : 'hidden';
         c.lens.setAttribute('visibility', vis); c.lensRing.setAttribute('visibility', vis); c.lensText.setAttribute('visibility', vis);
         if (!say) say = st.result || (st.element ? (st.passing ? 'The element is going under the gate...' : 'The element rests against the gate.') : '');
-        coachText = `arm ${n(st.out)}° (stops ${n(st.outStopLow)}–${n(st.outStopHigh)}°) · element to wheel ${n(st.clearanceIn, 2)} in · gap under arm vs element ${n(st.gapIn, 2)} in · open ${n(st.open, 2)} · ${common} · good: ${D.band(side + 'GateClosed')}, ${D.band(side + 'GateOpen')}` +
+        const goods = side === 'front' ? `${D.band('frontGateClosed')}, ${D.band('frontGateOpen')}`
+          : `servo 1 ${D.band('backGateClosed')}, ${D.band('backGateOpen')} · servo 2 ${D.band('backGate2Closed')}, ${D.band('backGate2Open')}`;
+        coachText = `arm ${n(st.out)}° (stops ${n(st.outStopLow)}–${n(st.outStopHigh)}°) · element to wheel ${n(st.clearanceIn, 2)} in · gap under arm vs element ${n(st.gapIn, 2)} in · open ${n(st.open, 2)} · ${common} · good: ${goods}` +
           (st.lastOpenS != null ? ` · last opening ${(st.lastOpenS * 240).toFixed(1)} frames` : '');
       }
       c.say.textContent = say;

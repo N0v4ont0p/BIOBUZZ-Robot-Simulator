@@ -127,7 +127,7 @@ Bench.register({
       for (const off of [0, Math.PI / 3, 2 * Math.PI / 3]) {
         Svg.el('line', {x1: wx - Math.cos(fa + off) * wr, y1: wy - Math.sin(fa + off) * wr, x2: wx + Math.cos(fa + off) * wr, y2: wy + Math.sin(fa + off) * wr, stroke: '#eceff1', 'stroke-width': 3}, g);
       }
-      // hood and the way out
+      // the fixed guide arc and rollers, and the way out
       const ox = wx + d.x * wr * 1.1, oy = wy + d.y * wr * 1.1;
       Svg.el('path', {d: `M ${c.x - n.x * ballR} ${c.y - n.y * ballR} Q ${ox + d.x * 30 - n.x * 10} ${oy + d.y * 30 - n.y * 10} ${ox + d.x * 26 + n.x * 40} ${oy + d.y * 26 + n.y * 40}`, fill: 'none', stroke: 'var(--part)', 'stroke-width': 5}, g);
       Svg.text(g, ox + d.x * 30 + n.x * 48, oy + d.y * 30 + n.y * 48, 'OUT', {'font-size': 11, 'font-weight': 700, fill: 'var(--muted)'});
@@ -136,7 +136,7 @@ Bench.register({
       const tx = wx - n.x * wr, ty = wy - n.y * wr;
       this.arrow(g, tx, ty, d.x * Math.sign(rpm), d.y * Math.sign(rpm), len, rpm >= 0 ? 'var(--good)' : 'var(--bad)');
       if (fw.contact[lane]) this.ball(g, c.x, c.y, lane === 0 ? 'NECTAR' : 'POLLEN', lane === 0 ? 3.6 : 2.8);
-      // a shot: the element leaves along the hood
+      // a shot: the element leaves along the guide
       if (this.lastLaunched && fw.launched[lane] > this.lastLaunched[lane]) this.flash[lane] = 8;
       if (this.lastBounced && fw.bouncedBack[lane] > this.lastBounced[lane]) this.bounceFlash[lane] = 30;
       if (this.flash[lane] > 0) {
@@ -168,6 +168,7 @@ Bench.register({
       `${fw.rpmOut[i] < -50 ? ' (WRONG WAY: elements bounce back)' : ''}; last shot: dip ${f0(fw.lastDipTicks[i])} ticks/s, ` +
       `exit ${f0(fw.lastExitMps[i], 2)} m/s; ${fw.launched[i]} launched, ${fw.bouncedBack[i]} pushed back</b>`).join('') +
       `<span>intake</span><b>elements move ${f0(it.surfaceIn, 1)} in/s (+ = in)${it.blocked ? ', roller slipping on ' + it.blocked : ''}</b>` +
+      `<span>POLLEN feeder</span><b>POLLEN moves ${f0(it.pollenSurfaceIn, 1)} in/s (+ = toward the back launcher)${it.blockedPollen ? ', wheels slipping on ' + it.blockedPollen : ''}</b>` +
       `<span>gates</span><b>front ${f0(it.gateOpen[0] * 100)}% open${it.gateRubs[0] ? ' RUBS the wheel' : ''}, back ${f0(it.gateOpen[1] * 100)}% open${it.gateRubs[1] ? ' RUBS the wheel' : ''}</b>`;
     for (let i = 0; i < 2; i++) {
       this.trail[i].push(fw.ticksOut[i]);

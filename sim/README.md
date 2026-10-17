@@ -21,8 +21,8 @@ one back.
 ## The student loop
 
 The **Start here** tab is the whole path as a checklist that ticks itself, in the real robot's 3 sessions: Configure
-Robot and the CAD sheet (build 1), programs 1 to 4 on blocks, 5 to 7 on the floor, 8 and 9 on the field, then one
-copy and the final install (build 2), TeleOp, report card. Each line opens the tab it needs.
+Robot and the CAD sheet (build 1), programs 1 to 4 on blocks, 5 to 7 on the floor, 8 (back, POLLEN) and 9 (front,
+NECTAR) on the field, then one copy and the final install (build 2), TeleOp, report card. Each line opens the tab it needs.
 
 Between the two builds every setup program (and Pedro's tuners) reads what the earlier ones saved in the robot's
 results file (`LiveResults` in TeamCode; the Driver Station shows a yellow line). The simulator gives the robot code
@@ -35,9 +35,9 @@ its install time (`PackageInfo.lastUpdateTime`) like the real app, so "saved aft
 3. Step 2, the programmer step, in one of two modes:
    - **Coach mode:** the simulator does what `docs/BIOBUZZ_PREREQUISITES.md` Part 2 tells the programmer
      (`tools/apply_results.py`): newest line per key; YAML keys get `value` + `origin: measured`; program 2 answers set
-     `Intake.REVERSED` and `Launcher.FRONT/BACK_REVERSED`; info-only keys are listed, not entered; a red STOP result
+     `Intake.REVERSED`, `Intake.POLLEN_REVERSED`, `Launcher.FRONT/BACK_REVERSED` and `Ramp.RAMP_REVERSED`; info-only keys are listed, not entered; a red STOP result
      (`*FlywheelEncoderOpposite = true`, `*FlywheelThrowsOut = false`) enters nothing for that flywheel; the points files
-     become `<side>ShotNN{Distance,Speed,Hood,Feed}`. Then `render.sh`, build, install. The tab shows the diff it made.
+     become `<side>ShotNN{Distance,Speed,Feed}` (older points files with a hood column are read, the hood skipped). Then `render.sh`, build, install. The tab shows the diff it made.
    - **Real mode:** the tab lists the files to send and what the programmer (Claude) will do in the sandbox
      (`<work>/sandbox`). When they are done, press **Install new build**.
 4. Step 3, **Install new build**: compiles the sandbox TeamCode and restarts the robot (statics wiped). If it doesn't
@@ -65,13 +65,14 @@ Nothing here ever touches the real `team-config.yaml` or TeamCode: all edits go 
 }
 ```
 
-- **Hidden-robot values:** any key the physics reads (`battery.charge`, `turret.startDeg`, `intake.inSign`, ...).
+- **Hidden-robot values:** any key the physics reads (`battery.charge`, `turret.startDeg`, `intake.inSign`, `ramp.holdPower`, ...).
   A value is a number, `{"min": a, "max": b}` or `{"value": v, "jitter": j}`; the seed picks it.
 - **`config`:** leave it out and the student builds the configuration. `"preset"` = the configuration from the setup
-  guide, already active. `{"preset": true, "rename": {"lt": "yaw"}}` = a teammate's configuration with those names typed wrong.
+  guide, already active. `{"preset": true, "rename": {"pfeed": "pollen"}}` = a teammate's configuration with those names typed wrong.
 - **`faults`:** wiring (`swapMotorCables` `a`/`b`, `encoderUnplugged` `port`, `encoderFrom` `port`/`part`,
-  `encoderReversed` `port`, `swapServoCables` `a`/`b`; ports are `CH.0`-`CH.3`, `EH.0`-`EH.3`, servos `CH.0`-`CH.5`),
-  plus labels the report card explains: `lowBattery`, `turretNotForward`, `intakeReversed`. Any fault can carry
+  `encoderReversed` `port`, `swapServoCables` `a`/`b`; ports are `CH.0`-`CH.3`, `EH.0`-`EH.3`, servos `CH.0`-`CH.5`,
+  `EH.0`-`EH.5`), plus labels the report card explains: `lowBattery`, `intakeReversed`, `pollenFeedReversed`,
+  `rampServoNotMirrored`. Any fault can carry
   `"set": {"battery.charge": 0.3}` (hidden-robot values it changes), and `"text"` / `"caughtBy"` to describe a new type.
 - **`randomFaults`:** `{"count": 2, "pool": [fault, ...]}` picks `count` faults from the pool by seed.
 
@@ -85,14 +86,15 @@ menu (top of the page) and press **New robot**.
 | A-perfect-robot | the flow, no surprises |
 | A2-perfect-preset-config | the same, configuration already done |
 | B-wiring-day | swapped drive motor cables, unplugged flywheel encoder, low battery |
-| B2-wrong-names | a teammate's configuration with wrong names |
-| C-turret-tight-cable / -sticky / -backlash | program 3: cable short of 90 deg, binding bearings, loose gears |
-| C-servo-hood-binds / -slow-gate | program 4: a hood stop far too early (buzz, heat, burnout), one slow gate |
+| B2-wrong-names | a teammate's configuration with wrong names (`pfeed`, `bg2`) |
+| C-turret-tight-cable / -slow-servo | program 3: a cable that goes tight before straight left, a back turret much slower than the front |
+| C-servo-slow-gate, C-backgate-spline-off | program 4: one slow gate; back gate servo 2 a spline tooth off (match it by ear) |
+| C-ramp-servo-not-mirrored | program 2: ramp servos fighting |
 | C-launcher-reversed-flywheel / -dragging-flywheel | programs 2 and 7: power wires swapped, a dry bearing |
 | D-odometry-reversed-pod / -pod-lifted, D-drive-reversed-wheel | programs 1, 5, 6: odometry and drive faults |
-| E-human-error, E-launcher-leftover-elements | low battery, crooked turrets at INIT, two elements loaded |
-| F-turret-index-switch | the optional index switch (`yz`, digital port 0), turrets 7° crooked: program 3 measures the switch, INIT zeroes on it |
+| E-human-error, E-launcher-leftover-elements | low battery, two elements left in the launcher lanes |
 | F-random | two random faults from a pool |
+| G-flywheel-speed-wobble | flywheel wobble that grows with speed (the shot-speed check test) |
 
 ## What is real and what is simulated
 
@@ -102,10 +104,12 @@ HardwareMap, `DcMotorImplEx` / `ServoImplEx` (incl. the goBILDA direction flip),
 `Mecanum`, `PinpointLocalizer`, and Pedro's own tuner code run by program 5 on the Driver Station), `render.sh` / `emit_tuning`.
 
 Simulated: the REV hubs (Lynx velocity PIDF whose output is power, so battery sag matters; 50 ms encoder velocity
-window; bulk-cached reads; unchanged commands not resent; ~1.3 / 2.5 ms per command; 8 digital ports), the Pinpoint
+window; bulk-cached reads; unchanged commands not resent; ~1.3 / 2.5 ms per command; 8 digital ports, nothing plugged in), the Pinpoint
 firmware (pod wheels a few tenths of a percent off their catalog size, a gyro scale a little off 1), motors, battery,
-mecanum floor physics, turret (gear play between the motor encoder and each turret, optional index switch), servos
-(stopping at the edge of their deadband, so the side they came from matters) and linkages, elements and shots, the
+mecanum floor physics, the two turrets (a position servo each through its gear, no feedback; hard stops and a cable
+that pulls tight before them), servos (stopping at the edge of their deadband, so the side they came from matters)
+and linkages, the ramp (two continuous servos winding strings; it rests up by itself; two
+servos mounted the same way fight), the back gate's two servos (they fight where they disagree), elements and shots, the
 Driver Station app, and the network between them.
 
 Known limits:

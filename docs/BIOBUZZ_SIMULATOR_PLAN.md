@@ -1,3 +1,5 @@
+Hardware partly superseded 2026-10-17 (no hood, a position servo per turret, a string ramp on 2 continuous servos, a 2-servo back gate, 2 intake motors): see docs/HARDWARE_UPDATE_PLAN.md
+
 # BIOBUZZ Setup Simulator: Plan
 
 Status: BUILT (branch biobuzz-sim). How to run it: `sim/README.md`. What changed from this plan while building: section 13.

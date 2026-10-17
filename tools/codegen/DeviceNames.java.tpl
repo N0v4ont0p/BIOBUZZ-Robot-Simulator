@@ -13,20 +13,23 @@ public final class DeviceNames {
     public static final String RIGHT_FRONT = {{device.drive_right_front}};
     public static final String RIGHT_BACK = {{device.drive_right_back}};
     public static final String PINPOINT = {{device.pinpoint}};
+    // main intake + NECTAR feed; the POLLEN feeder wheels at the back
     public static final String INTAKE = {{device.intake_motor}};
-    public static final String YAW = {{device.yaw_motor}};
+    public static final String POLLEN_FEED = {{device.pollen_feed_motor}};
     public static final String FRONT_FLYWHEEL = {{device.front_flywheel}};
     public static final String BACK_FLYWHEEL = {{device.back_flywheel}};
-    public static final String FRONT_HOOD = {{device.front_hood}};
-    public static final String BACK_HOOD = {{device.back_hood}};
-    public static final String RAMP = {{device.ramp_servo}};
+    // the ramp's two continuous rotation servos (mirrored)
+    public static final String RAMP_LEFT = {{device.ramp_left}};
+    public static final String RAMP_RIGHT = {{device.ramp_right}};
     public static final String FRONT_GATE = {{device.front_gate}};
+    // the back gate: one servo each side (mirrored)
     public static final String BACK_GATE = {{device.back_gate}};
-    // optional (not in ALL): magnetic switch at turret forward, zeroes the yaw at INIT
-    public static final String YAW_INDEX = {{device.yaw_index}};
+    public static final String BACK_GATE_2 = {{device.back_gate_2}};
+    public static final String FRONT_YAW = {{device.front_yaw}};
+    public static final String BACK_YAW = {{device.back_yaw}};
 
-    public static final String[] ALL = {LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK, PINPOINT, INTAKE, YAW,
-            FRONT_FLYWHEEL, BACK_FLYWHEEL, FRONT_HOOD, BACK_HOOD, RAMP, FRONT_GATE, BACK_GATE};
+    public static final String[] ALL = {LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK, PINPOINT, INTAKE, POLLEN_FEED,
+            FRONT_FLYWHEEL, BACK_FLYWHEEL, RAMP_LEFT, RAMP_RIGHT, FRONT_GATE, BACK_GATE, BACK_GATE_2, FRONT_YAW, BACK_YAW};
 
     // Names the Robot Controller configuration does not have, space separated; "" when all are there.
     // Check before constructing anything: hardwareMap.get throws on a missing name.

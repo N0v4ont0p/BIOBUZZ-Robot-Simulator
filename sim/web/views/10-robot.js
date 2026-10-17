@@ -4,7 +4,7 @@ Bench.register({
   id: 'robot', title: 'Robot', order: 10,
   mount(el) {
     el.innerHTML = `<h3>Robot (top view, front is up)</h3>
-      <p class="hint">Drag a wheel, the intake roller or a flywheel up/down to turn it by hand. Drag around a turret to turn it.
+      <p class="hint">Drag a wheel, the intake roller, the POLLEN feeder or a flywheel up/down to turn it by hand. Drag around a turret to turn it (only while its servo has no signal).
         Flywheels have few encoder counts per turn: spin them a full turn or more.</p>
       <div class="controls">
         <button class="btn secondary" data-a="onBox">Put on box</button>
@@ -50,6 +50,14 @@ Bench.register({
     this.intakeLabel = Svg.text(g, cx + 120, cy - 9 * S + 14, '', {});
     const ib = Bench.handBatcher('intake', 'turn', 'deg');
     Bench.drag(intake, (dx, dy) => ib.add(-dy * 3), () => setTimeout(() => App.hand('intake', 'release'), 60));
+    // the 2 POLLEN feeder wheels (second intake motor), in the back lane
+    const pf = Svg.el('g', {class: 'grab'}, g);
+    Svg.el('rect', {x: cx + 70, y: cy + 1 * S, width: 70, height: 22, rx: 11, fill: '#8d6e63'}, pf);
+    this.pollenSpoke = Svg.el('line', {y1: cy + 1 * S + 2, y2: cy + 1 * S + 20, stroke: '#d7ccc8', 'stroke-width': 3}, pf);
+    this.pollenLabel = Svg.text(g, cx + 148, cy + 1 * S + 15, '', {'font-size': 11});
+    const pb = Bench.handBatcher('intake', 'turn', 'deg');
+    Bench.drag(pf, (dx, dy) => pb.add(-dy * 3, {pollen: true}), () => setTimeout(() => App.hand('intake', 'release'), 60));
+    this.pollenX = cx + 70;
     // turrets with barrels and flywheels
     this.turrets = [[0, -3, 'front'], [0, 4.5, 'back']].map(([x, y, name], i) => {
       const t = Svg.el('g', {}, g);
@@ -86,6 +94,9 @@ Bench.register({
     const ioff = ((w.intake.deg % 40) + 40) % 40 / 40 * 36;
     this.intakeLines.forEach((l, k) => { const x = 190 + ((k * 36 + ioff) % 216); l.setAttribute('x1', x); l.setAttribute('x2', x); });
     this.intakeLabel.textContent = Math.round(w.intake.rpmIn) + ' rpm (in)';
+    const px = this.pollenX + 6 + (((w.intake.pollenRpmIn || 0) * 0.02 % 1) + 1) % 1 * 58;
+    this.pollenSpoke.setAttribute('x1', px); this.pollenSpoke.setAttribute('x2', px);
+    this.pollenLabel.textContent = 'POLLEN feeder ' + Math.round(w.intake.pollenRpmIn || 0) + ' rpm';
     [w.turret.frontDeg, w.turret.backDeg].forEach((deg, i) => {
       const t = this.turrets[i], a = deg * Math.PI / 180;
       t.barrel.setAttribute('x2', t.x - Math.sin(a) * 60);

@@ -35,9 +35,6 @@ if __name__ == "__main__":
         s.wait_text("Alliance")
         time.sleep(0.5)
         s.press("circle")
-        # the turrets start straight forward: zero them
-        s.press("cross")
-        s.wait_text("Turret zero: SET")
         for _ in range(3):
             time.sleep(0.5)
             s.press("options")

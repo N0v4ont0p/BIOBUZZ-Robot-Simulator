@@ -45,8 +45,8 @@ Bench.register({
       const side = +el.querySelector('#shPivot').value;
       const r = await App.api(`shots/solve?side=${side}&distance=${this.tape.d.toFixed(1)}`);
       out.textContent = r.reachable
-        ? `${side ? 'back' : 'front'}: about ${Math.round(r.speed / 20) * 20} ticks/s, hood ${r.hood.toFixed(3)} (launch ${r.launchDeg.toFixed(1)}°), scores ${Math.round(r.makeChance * 100)}% of shots`
-        : 'nothing scores from this distance';
+        ? `${side ? 'back' : 'front'}: about ${Math.round(r.speed / 20) * 20} ticks/s (fixed launch ${r.launchDeg.toFixed(1)}°), scores ${Math.round(r.makeChance * 100)}% of shots`
+        : `nothing scores from this distance at the fixed ${r.launchDeg.toFixed(1)}° launch angle`;
     };
     const svg = el.querySelector('#shField');
     const f = this.fieldXY.bind(this), S = this.S;

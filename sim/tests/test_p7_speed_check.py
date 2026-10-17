@@ -34,15 +34,21 @@ def check(s):
     for side in (0, 1):
         for k in range(4):
             s.wait_text(f"Shot {k + 1} of 4", timeout=30)
-            assert s.hand("intake", "loadLauncher", side=side)["ok"]
-            for _ in range(30):
-                pull_trigger(s)
-                try:
-                    s.wait_text("Firing and watching", timeout=1.0)
+            # a shot the program did not count ("hardly slowed": nothing reached the wheel): load ONE and fire again,
+            # as the screen says
+            for attempt in range(3):
+                if s.world()["intake"]["held"] == 0:
+                    assert s.hand("intake", "loadLauncher", side=side)["ok"]
+                for _ in range(30):
+                    pull_trigger(s)
+                    try:
+                        s.wait_text("Firing and watching", timeout=1.0)
+                        break
+                    except TimeoutError:
+                        continue
+                s.wait(lambda st: "Firing and watching" not in "\n".join(st["ds"]["telemetry"]), 10, "the shot to end")
+                if f"Shot {k + 1} of 4" not in s.telemetry() or "hardly slowed" not in s.telemetry():
                     break
-                except TimeoutError:
-                    continue
-            s.wait(lambda st: "Firing and watching" not in "\n".join(st["ds"]["telemetry"]), 10, "the shot to end")
         s.wait_text("Idle", timeout=10)
         end = time.time() + 90
         while time.time() < end and "SAVED" not in s.telemetry() and "NOT saved" not in s.telemetry() and "one band is enough" not in s.telemetry():

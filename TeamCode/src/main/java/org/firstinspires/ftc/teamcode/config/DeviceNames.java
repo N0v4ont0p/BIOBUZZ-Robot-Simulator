@@ -13,20 +13,23 @@ public final class DeviceNames {
     public static final String RIGHT_FRONT = "rf";
     public static final String RIGHT_BACK = "rb";
     public static final String PINPOINT = "pp";
+    // main intake + NECTAR feed; the POLLEN feeder wheels at the back
     public static final String INTAKE = "intake";
-    public static final String YAW = "lt";
+    public static final String POLLEN_FEED = "pfeed";
     public static final String FRONT_FLYWHEEL = "fs";
     public static final String BACK_FLYWHEEL = "bs";
-    public static final String FRONT_HOOD = "fpanel";
-    public static final String BACK_HOOD = "bpanel";
-    public static final String RAMP = "ramp";
+    // the ramp's two continuous rotation servos (mirrored)
+    public static final String RAMP_LEFT = "rampl";
+    public static final String RAMP_RIGHT = "rampr";
     public static final String FRONT_GATE = "fg";
+    // the back gate: one servo each side (mirrored)
     public static final String BACK_GATE = "bg";
-    // optional (not in ALL): magnetic switch at turret forward, zeroes the yaw at INIT
-    public static final String YAW_INDEX = "yz";
+    public static final String BACK_GATE_2 = "bg2";
+    public static final String FRONT_YAW = "fyaw";
+    public static final String BACK_YAW = "byaw";
 
-    public static final String[] ALL = {LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK, PINPOINT, INTAKE, YAW,
-            FRONT_FLYWHEEL, BACK_FLYWHEEL, FRONT_HOOD, BACK_HOOD, RAMP, FRONT_GATE, BACK_GATE};
+    public static final String[] ALL = {LEFT_FRONT, LEFT_BACK, RIGHT_FRONT, RIGHT_BACK, PINPOINT, INTAKE, POLLEN_FEED,
+            FRONT_FLYWHEEL, BACK_FLYWHEEL, RAMP_LEFT, RAMP_RIGHT, FRONT_GATE, BACK_GATE, BACK_GATE_2, FRONT_YAW, BACK_YAW};
 
     // Names the Robot Controller configuration does not have, space separated; "" when all are there.
     // Check before constructing anything: hardwareMap.get throws on a missing name.

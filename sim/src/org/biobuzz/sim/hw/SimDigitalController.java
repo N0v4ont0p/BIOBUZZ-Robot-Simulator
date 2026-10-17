@@ -51,7 +51,8 @@ public final class SimDigitalController implements DigitalChannelController {
         lease.check();
         if (modes[port] == DigitalChannel.Mode.OUTPUT) return outputs[port];
         hub.readDelay();
-        return !"yawIndex".equals(hub.digital[port]) || !robot.turret.indexActive();
+        // nothing on this robot pulls a digital input low (an open input reads high)
+        return true;
     }
 
     @Override

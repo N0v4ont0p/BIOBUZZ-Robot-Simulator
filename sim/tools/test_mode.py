@@ -26,27 +26,19 @@ def shot_table(s, side):
             continue
         n += 1
         key = f"{SIDES[side]}Shot{n:02d}"
-        out.update({key + "Distance": d, key + "Speed": round(sol["speed"]), key + "Hood": round(sol["hood"], 3), key + "Feed": 0.5})
+        out.update({key + "Distance": d, key + "Speed": round(sol["speed"]), key + "Feed": 0.5})
     return out
 
 
 def values(s):
     v = tuned_robot(s)
     exp = expected(s)
-    # program 4's ramp positions (the autos' RAMP legs)
-    for k in ("rampStowed", "rampDeployed"):
-        v[k] = round(float(pick(exp, guide(s), k)), 4)
     # program 6 (position check)
     for k in ("podTicksPerMm", "imuYawScalar"):
         if exp.get(k) is not None:
             v[k] = round(exp[k], 6)
     if exp.get("velocityFrame") is not None:
         v["velocityFrameField"] = 1 if exp["velocityFrame"] >= 0.5 else 0
-    # program 3 part D (homing): the stops as a touch reads them (half the gear play past the true stop)
-    coach = s.world()["turret"]["coach"]
-    half = coach.get("playFrontDeg", 0) / 2
-    v.update({"yawHomeLeftDeg": round(coach["leftLimitDeg"] + half, 3), "yawHomeRightDeg": round(coach["rightLimitDeg"] - half, 3),
-              "yawHomeFastDegS": 150.0, "yawHomeCreepDegS": 20.0, "yawHomeCrossDegS": 250.0})
     # the auto draft (H-2): the sample auto's start and park poses (the ones sim/tests/test_auto_park.py drives)
     v.update({"blueStartX": 30.0, "blueStartY": 120.0, "blueStartHeading": 0.0, "blueParkX": 60.0, "blueParkY": 100.0, "blueParkHeading": -60.0})
     # programs 8 / 9

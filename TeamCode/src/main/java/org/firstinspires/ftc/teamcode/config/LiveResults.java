@@ -6,6 +6,7 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Launcher;
+import org.firstinspires.ftc.teamcode.subsystems.Ramp;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -214,6 +215,8 @@ public final class LiveResults {
     private static Field target(String key) {
         switch (key) {
             case "intakeReversed": return field(Intake.class, "REVERSED");
+            case "pollenFeedReversed": return field(Intake.class, "POLLEN_REVERSED");
+            case "rampReversed": return field(Ramp.class, "RAMP_REVERSED");
             case "frontFlywheelReversed": return field(Launcher.class, "FRONT_REVERSED");
             case "backFlywheelReversed": return field(Launcher.class, "BACK_REVERSED");
             default:

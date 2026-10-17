@@ -6,6 +6,6 @@
     "back": {"speedS60": {"min": 0.26, "max": 0.30}}
   },
   "faults": [
-    {"type": "slowGate", "part": "gate.back", "caughtBy": "4 Servo Positions, step 11 (gate travel time)"}
+    {"type": "slowGate", "part": "gate.back", "caughtBy": "4 Servo Positions, step 8 (gate travel time)"}
   ]
 }

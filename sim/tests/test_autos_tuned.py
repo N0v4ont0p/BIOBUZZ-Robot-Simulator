@@ -2,7 +2,8 @@
 programs and the CAD / field sheets give (test mode's set, the same keys apply_results.py enters), one build, then every
 AutoTool auto (both alliances, from its own start) must drive every leg, fire at every SHOOT leg and score (one element per
 launcher loaded when the shot starts: the sim has no field elements), never report a value as not set or skip a shot,
-and finish before the abort time."""
+and finish before the abort time. The ramp (2 continuous servos on strings, run by time) must not droop into the field
+while the robot drives: at most a moment at START, while it winds back in from any creep in INIT (unpowered, R102)."""
 import os
 import re
 import sys
@@ -30,7 +31,10 @@ def run(s, alliance, auto):
         x, y, h = 144 - x, 144 - y, (h + 360) % 360 - 180
     s.hand("drive", "place", x=x, y=y, headingDeg=h, exact=True)
     straighten_turrets(s)
+    # the ramp is folded up by hand when the robot is placed
+    s.hand("servos", "stowRamp")
     shots_before = len(s.get("shots")["shots"])
+    droop_before = s.world()["servos"]["ramp"]["droopSeconds"]
     name = f"{alliance}_{auto['name']}"
     s.init(name)
     s.wait_text("Alliance", timeout=20)
@@ -53,11 +57,14 @@ def run(s, alliance, auto):
             break
         time.sleep(0.2)
     took = time.time() - t0
+    droop = s.world()["servos"]["ramp"]["droopSeconds"] - droop_before
     s.stop()
     shots = s.get("shots")["shots"][shots_before:]
     fired, made = len(shots), sum(1 for x in shots if x.get("result") == "made")
     bad = [st for st in statuses if "not set" in st or "skipped" in st]
-    print(f"{name}: {status} after {took:.1f} s, {fired} shots ({made} scored) for {shoot_legs(auto['name'])} SHOOT legs")
+    print(f"{name}: {status} after {took:.1f} s, {fired} shots ({made} scored) for {shoot_legs(auto['name'])} SHOOT legs, "
+          f"ramp drooped {droop:.2f} s while driving")
+    assert droop < 0.5, (name, "the ramp drooped into the field", droop)
     assert not bad, (name, bad)
     assert re.match(r"(parked|done)", status), (name, statuses)
     assert fired >= 2 * shoot_legs(auto["name"]), (name, fired, statuses)

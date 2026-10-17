@@ -18,8 +18,8 @@ def run(s):
              ("left-back wheel", "drive", "turnWheel", "releaseWheel", {"wheel": 1}, 90),
              ("right-front wheel", "drive", "turnWheel", "releaseWheel", {"wheel": 2}, 90),
              ("right-back wheel", "drive", "turnWheel", "releaseWheel", {"wheel": 3}, 90),
-             ("intake", "intake", "turn", "release", {}, 90),
-             ("turrets (yaw)", "turret", "turn", "release", {}, 10),
+             ("intake roller", "intake", "turn", "release", {}, 90),
+             ("POLLEN feeder wheels", "intake", "turn", "release", {"pollen": True}, 90),
              ("front flywheel", "flywheels", "turn", "release", {"wheel": 0}, 720),
              ("back flywheel", "flywheels", "turn", "release", {"wheel": 1}, 720)]
     for name, part, turn, release, args, deg in parts:
@@ -41,7 +41,7 @@ def run(s):
     s.stop()
     st = s.wait(lambda st: st["ds"]["active"] == "2 Motor Directions" and st["ds"]["state"] == "INIT", 10, "program 2 auto-loaded")
     results = s.file("biobuzz_results.csv")
-    assert "devicesFound,14/14" in results, results
+    assert "devicesFound,16/16" in results, results
     assert "encodersNotCounting,none" in results, results
     assert "encodersCrossed,none" in results, results
 

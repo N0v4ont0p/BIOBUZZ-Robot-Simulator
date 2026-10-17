@@ -5,12 +5,13 @@
     "count": 2,
     "pool": [
       {"type": "lowBattery", "set": {"battery.charge": 0.3}},
-      {"type": "turretNotForward", "set": {"turret.startDeg": -10}},
+      {"type": "pollenFeedReversed", "set": {"intake.pollenInSign": -1}},
       {"type": "intakeReversed", "set": {"intake.inSign": -1}},
       {"type": "swapMotorCables", "a": "CH.2", "b": "CH.3"},
       {"type": "encoderUnplugged", "port": "EH.3"},
       {"type": "encoderReversed", "port": "EH.2"},
-      {"type": "swapServoCables", "a": "CH.3", "b": "CH.4"}
+      {"type": "swapServoCables", "a": "CH.2", "b": "CH.3"},
+      {"type": "rampServoNotMirrored", "set": {"ramp.left.dir": 1, "ramp.right.dir": 1}}
     ]
   },
   "faults": []

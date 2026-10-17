@@ -28,8 +28,8 @@ def run(s):
     s.press("cross")
     parts = [("right-front wheel", "drive", "turnWheel", "releaseWheel", {"wheel": 2}, 90),
              ("right-back wheel", "drive", "turnWheel", "releaseWheel", {"wheel": 3}, 90),
-             ("intake", "intake", "turn", "release", {}, 90),
-             ("turrets (yaw)", "turret", "turn", "release", {}, 10)]
+             ("intake roller", "intake", "turn", "release", {}, 90),
+             ("POLLEN feeder wheels", "intake", "turn", "release", {"pollen": True}, 90)]
     for name, part, turn, release, args, deg in parts:
         s.wait_text("Encoders: " + name)
         s.hand(part, turn, deg=deg, **args)

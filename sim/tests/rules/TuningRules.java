@@ -22,11 +22,12 @@ public class TuningRules {
         double at(double d);
     }
 
-    static double[][] table(Truth speed, Truth hood, double from, double to, double step, Random noise, double speedW, double hoodW) {
+    // rows {distance, speed, feed} (no hood: team 2026-10-17)
+    static double[][] table(Truth speed, Truth feed, double from, double to, double step, Random noise, double speedW, double feedW) {
         List<double[]> rows = new ArrayList<>();
         for (double d = from; d <= to + 1e-9; d += step) {
-            double sw = noise == null ? 0 : (noise.nextDouble() * 2 - 1) * speedW, hw = noise == null ? 0 : (noise.nextDouble() * 2 - 1) * hoodW;
-            rows.add(new double[]{d, speed.at(d) + sw, hood.at(d) + hw, 0.5});
+            double sw = noise == null ? 0 : (noise.nextDouble() * 2 - 1) * speedW, fw = noise == null ? 0 : (noise.nextDouble() * 2 - 1) * feedW;
+            rows.add(new double[]{d, speed.at(d) + sw, feed.at(d) + fw});
         }
         return rows.toArray(new double[0][]);
     }
@@ -35,7 +36,7 @@ public class TuningRules {
         double[][] line = table(d -> 1000 + 10 * d, d -> 0.3 + 0.004 * d, 36, 81, 5, null, 0, 0);
         ShotCurve c = new ShotCurve(line, true);
         for (double d = 36; d <= 81; d += 2.5) {
-            check(Math.abs(c.speed(d) - (1000 + 10 * d)) < 1e-6 && Math.abs(c.hood(d) - (0.3 + 0.004 * d)) < 1e-9, "a straight table stays straight at " + d);
+            check(Math.abs(c.speed(d) - (1000 + 10 * d)) < 1e-6 && Math.abs(c.feed(d) - (0.3 + 0.004 * d)) < 1e-9, "a straight table stays straight at " + d);
         }
         // past the ends: the end value is held
         check(Math.abs(c.speed(95) - 1810) < 1e-6 && Math.abs(c.speed(30) - 1360) < 1e-6, "past the ends the end value holds: " + c.speed(95) + ", " + c.speed(30));
@@ -55,28 +56,28 @@ public class TuningRules {
     // points that scored somewhere inside their window: the curve lands nearer the true middle than straight lines
     static void curveAccuracy() {
         Random r = new Random(4);
-        Truth speed = d -> 1100 + 8 * d + 0.05 * d * d, hood = d -> 0.75 - 0.004 * d;
-        double linesErr = 0, curveErr = 0, linesHood = 0, curveHood = 0, worseCases = 0;
+        Truth speed = d -> 1100 + 8 * d + 0.05 * d * d, feed = d -> 0.75 - 0.004 * d;
+        double linesErr = 0, curveErr = 0, linesFeed = 0, curveFeed = 0, worseCases = 0;
         int cases = 500, n = 0;
         for (int k = 0; k < cases; k++) {
-            double[][] t = table(speed, hood, 36, 81, 5, r, 35, 0.015);
+            double[][] t = table(speed, feed, 36, 81, 5, r, 35, 0.15);
             ShotCurve smooth = new ShotCurve(t, true), lines = new ShotCurve(t, false);
             double le = 0, ce = 0;
             for (double d = 36; d <= 81; d += 2.5) {
                 le += Math.abs(lines.speed(d) - speed.at(d));
                 ce += Math.abs(smooth.speed(d) - speed.at(d));
-                linesHood += Math.abs(lines.hood(d) - hood.at(d));
-                curveHood += Math.abs(smooth.hood(d) - hood.at(d));
+                linesFeed += Math.abs(lines.feed(d) - feed.at(d));
+                curveFeed += Math.abs(smooth.feed(d) - feed.at(d));
                 n++;
             }
             linesErr += le;
             curveErr += ce;
             if (ce > le * 1.1) worseCases++;
         }
-        System.out.printf("  curve vs straight lines over %d noisy tables: speed off the middle %.1f vs %.1f ticks/s, hood %.4f vs %.4f; curve clearly worse in %.0f cases%n",
-                cases, curveErr / n, linesErr / n, curveHood / n, linesHood / n, worseCases);
+        System.out.printf("  curve vs straight lines over %d noisy tables: speed off the middle %.1f vs %.1f ticks/s, feed %.4f vs %.4f; curve clearly worse in %.0f cases%n",
+                cases, curveErr / n, linesErr / n, curveFeed / n, linesFeed / n, worseCases);
         check(curveErr < 0.85 * linesErr, "the curve is nearer the middle than straight lines (speed)");
-        check(curveHood < 0.85 * linesHood, "the curve is nearer the middle than straight lines (hood)");
+        check(curveFeed < 0.85 * linesFeed, "the curve is nearer the middle than straight lines (feed)");
         check(worseCases < 0.1 * cases, "the curve is rarely clearly worse than straight lines: " + worseCases);
     }
 

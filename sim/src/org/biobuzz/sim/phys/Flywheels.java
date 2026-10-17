@@ -10,9 +10,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import java.util.Map;
 import java.util.Random;
 
-// Front (NECTAR) and back (POLLEN) flywheels, one 6000 rpm motor each, a hood shooter: the element rolls between the
-// wheel and the hood. outSign: +1 means positive motor rotation moves the wheel surface the way that throws an
-// element out. A shot takes energy from the wheel (the element leaves at eff x surface speed, spinning, plus slip
+// Front (NECTAR) and back (POLLEN) flywheels (CAD v1): one 6000 rpm motor each, belted 20T -> 40T (the wheel turns at
+// half the motor's speed) to one 72 mm wheel. No hood: the element is squeezed between the wheel and a fixed arc of
+// plates and two driven 1 in rollers, and leaves past the last roller at the build's launch angle. The rollers turn
+// the other way at about 0.64 of the wheel's surface speed, so the element leaves faster than a plain hood would
+// throw it (eff about 0.7-0.8 of surface speed: a model guess, not measured). outSign: +1 means positive motor
+// rotation moves the wheel surface the way that throws an element out. Ticks are the motor's (28 per motor turn).
+// A shot takes energy from the wheel (the element leaves at eff x surface speed, spinning, plus slip
 // losses), so the wheel dips and the hub's speed control pulls it back. Speed wobble: bearings and wheel runout,
 // on top of the hub's own counting.
 public class Flywheels implements Part {
@@ -57,14 +61,15 @@ public class Flywheels implements Part {
             r.addMotor(motors[i]);
             Joint j = new Joint();
             j.motor = motors[i];
-            // two 96 mm wheels on a shaft, no extra flywheel mass: spins up in about half a second
-            j.inertia = Shots.pick(t, p + ".inertia", 0.9e-4, 1.6e-4);
+            // one 72 mm wheel, its hub, pulley and shaft (a guess from the CAD parts; masses are not in the CAD)
+            j.inertia = Shots.pick(t, p + ".inertia", 0.6e-4, 1.0e-4);
             j.viscous = Shots.pick(t, p + ".viscous", 1.0e-5, 2.5e-5);
+            j.gear = t.num(p + ".gear", 2.0);
             wheels[i] = j;
             outSign[i] = Shots.sign(t, p + ".outSign");
-            radiusM[i] = Shots.pick(t, p + ".wheelDiameterMm", 95, 97) / 2000;
-            effNectar[i] = Shots.pick(t, p + ".effNectar", 0.40, 0.46);
-            effPollen[i] = Shots.pick(t, p + ".effPollen", 0.43, 0.50);
+            radiusM[i] = Shots.pick(t, p + ".wheelDiameterMm", 71.5, 72.5) / 2000;
+            effNectar[i] = Shots.pick(t, p + ".effNectar", 0.66, 0.76);
+            effPollen[i] = Shots.pick(t, p + ".effPollen", 0.70, 0.80);
             loss[i] = Shots.pick(t, p + ".loss", 1.2, 1.6);
             wobbleTicks[i] = Shots.pick(t, p + ".wobbleTicks", 3, 10);
             feedCarry[i] = t.num(p + ".feedCarry", 0.1);
@@ -79,21 +84,22 @@ public class Flywheels implements Part {
         return "flywheels";
     }
 
+    // at the wheel: the motor's rotor seen through the belt
     public double inertia(int i) {
-        return wheels[i].inertia + motors[i].reflectedInertia();
+        return wheels[i].inertia + motors[i].reflectedInertia() * wheels[i].gear * wheels[i].gear;
     }
 
-    // wheel speed the throwing way, in encoder ticks per second (what a correctly set up hub would read)
+    // wheel speed the throwing way, in motor encoder ticks per second (what a correctly set up hub would read)
     public double ticksOut(int i) {
-        return wheels[i].rate * outSign[i] * TICKS_PER_RAD;
+        return wheels[i].rate * wheels[i].gear * outSign[i] * TICKS_PER_RAD;
     }
 
     @Override
     public void step(double dt, World w) {
         for (int i = 0; i < 2; i++) {
             Joint j = wheels[i];
-            double sigma = wobbleTicks[i] / TICKS_PER_RAD * Math.min(1, Math.abs(j.rate) / 300)
-                    * (1 + wobbleGrowth[i] * Math.max(0, Math.abs(j.rate) * TICKS_PER_RAD / 1000 - 1));
+            double sigma = wobbleTicks[i] / TICKS_PER_RAD / j.gear * Math.min(1, Math.abs(j.rate) * j.gear / 300)
+                    * (1 + wobbleGrowth[i] * Math.max(0, Math.abs(j.rate) * j.gear * TICKS_PER_RAD / 1000 - 1));
             double dx = -wobble[i] / WOBBLE_TAU * dt + sigma * Math.sqrt(2 * dt / WOBBLE_TAU) * rng.nextGaussian();
             wobble[i] += dx;
             double torque = inertia(i) * dx / dt;
@@ -148,7 +154,7 @@ public class Flywheels implements Part {
         contactFeed[i] = feedIn;
         contactEff[i] = a;
         contactCause[i] = cause;
-        beforeTicks[i] = om * TICKS_PER_RAD;
+        beforeTicks[i] = om * wheels[i].gear * TICKS_PER_RAD;
         dipMin[i] = beforeTicks[i];
         dipWatch[i] = 0.4;
         return true;
@@ -182,7 +188,7 @@ public class Flywheels implements Part {
     // during the few milliseconds of contact
     public double exitMps(int i, Element.Type type, double massKg, double grip, double ticks, double feedIn) {
         double a = eff(i, type) * grip * radiusM[i];
-        double om = ticks / TICKS_PER_RAD;
+        double om = ticks / TICKS_PER_RAD / wheels[i].gear;
         return a * om / Math.sqrt(1 + 2 * energyK(i) * massKg * a * a / inertia(i)) + feedCarry[i] * feedIn * 0.0254;
     }
 
@@ -190,9 +196,11 @@ public class Flywheels implements Part {
     // motor's own current (everything else off)
     public double trueTopTicks(int i, Battery b) {
         MotorSpec s = motors[i].spec;
-        double tf = motors[i].frictionTorque() + wheels[i].kineticFriction;
+        double g = wheels[i].gear;
+        // at the motor: the wheel's friction / g, its viscous drag / g^2
+        double tf = motors[i].frictionTorque() + wheels[i].kineticFriction / g;
         double rr = s.resistance + b.resistance;
-        double om = (b.openCircuit() - b.resistance * ELECTRONICS_AMPS - rr * tf / s.kT) / (s.kE + rr * wheels[i].viscous / s.kT);
+        double om = (b.openCircuit() - b.resistance * ELECTRONICS_AMPS - rr * tf / s.kT) / (s.kE + rr * wheels[i].viscous / (g * g) / s.kT);
         return om * TICKS_PER_RAD;
     }
 
@@ -201,7 +209,7 @@ public class Flywheels implements Part {
         double[] rpm = new double[2], deg = new double[2], ticks = new double[2];
         boolean[] touching = new boolean[2];
         for (int i = 0; i < 2; i++) {
-            rpm[i] = wheels[i].rate * outSign[i] * 60 / (2 * Math.PI);
+            rpm[i] = wheels[i].rate * outSign[i] * 60 / (2 * Math.PI);  // the wheel's own rpm (half the motor's)
             deg[i] = Math.toDegrees(wheels[i].angle * outSign[i]);
             ticks[i] = ticksOut(i);
             touching[i] = contact[i] != null;

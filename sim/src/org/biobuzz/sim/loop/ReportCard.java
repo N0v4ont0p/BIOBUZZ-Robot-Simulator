@@ -30,9 +30,10 @@ public final class ReportCard {
     private static final Map<String, String> PARTS = new LinkedHashMap<>();
     static {
         String[] p = {"drive.leftFront", "left-front wheel", "drive.leftBack", "left-back wheel", "drive.rightFront", "right-front wheel",
-                "drive.rightBack", "right-back wheel", "intake", "intake", "yaw", "turret (yaw)", "flywheel.front", "front flywheel",
-                "flywheel.back", "back flywheel", "hood.front", "front hood", "hood.back", "back hood", "ramp", "ramp",
-                "gate.front", "front gate", "gate.back", "back gate"};
+                "drive.rightBack", "right-back wheel", "intake", "intake roller", "pollenFeed", "POLLEN feeder wheels", "flywheel.front", "front flywheel",
+                "flywheel.back", "back flywheel", "ramp.left", "left ramp servo", "ramp.right", "right ramp servo",
+                "gate.front", "front gate", "gate.back", "back gate servo 1", "gate.back2", "back gate servo 2", "yaw.front", "front turret servo",
+                "yaw.back", "back turret servo"};
         for (int i = 0; i < p.length; i += 2) PARTS.put(p[i], p[i + 1]);
     }
 
@@ -180,10 +181,10 @@ public final class ReportCard {
                     text = "The " + part(r, port, true) + " encoder counts backwards (port " + port + ").";
                     if (id.startsWith("flywheel.")) {
                         String side = id.substring(9);
-                        step = "Program 2 step " + (side.equals("front") ? 2 : 3) + ": red STOP \"encoder counts the opposite way\" (" + side + "FlywheelEncoderOpposite = true).";
+                        step = "Program 2 step " + (side.equals("front") ? 3 : 4) + ": red STOP \"encoder counts the opposite way\" (" + side + "FlywheelEncoderOpposite = true).";
                         caught = any(rows, side + "FlywheelEncoderOpposite", "true");
                     } else {
-                        step = "Nothing to fix by hand: program 3 measures the turret's sign itself, and Pedro drives from the Pinpoint pods, not the wheel encoders.";
+                        step = "Nothing to fix by hand: the intake motors run on power only, and Pedro drives from the Pinpoint pods, not the wheel encoders.";
                     }
                     break;
                 }
@@ -192,16 +193,22 @@ public final class ReportCard {
                     step = "Program 1 step 2: below 12.5 V means swap the battery (Robot tab: Swap in a charged battery).";
                     caught = r.battery.charge > w.truth.num("battery.charge", 0.95) + 0.01;
                     break;
-                case "turretNotForward":
-                    text = String.format(Locale.US, "The turrets were %.0f deg off straight forward when INIT set the zero.", w.truth.num("turret.startDeg", 0));
-                    step = "Before INIT of program 3 (and 8, 9, TeleOp): point both barrels straight forward. No program checks this by itself (a gap): "
-                            + "in program 3 Part A the left/right readings come out uneven, e.g. +100 / -80 instead of +90 / -90.";
-                    break;
                 case "intakeReversed":
                     text = "The intake motor turns the other way (+ power pushes elements out).";
                     step = "Program 2 step 1: elements don't go in, answer NO (intakeReversed = true).";
                     caught = "true".equals(newest(rows).get("intakeReversed"));
                     break;
+                case "pollenFeedReversed":
+                    text = "The POLLEN feeder motor turns the other way (+ power moves POLLEN away from the back launcher).";
+                    step = "Program 2 step 2: POLLEN does not move toward the back launcher, answer NO (pollenFeedReversed = true).";
+                    caught = "true".equals(newest(rows).get("pollenFeedReversed"));
+                    break;
+                case "rampServoNotMirrored": {
+                    text = "The right ramp servo is mounted the same way as the left: the two turn against each other.";
+                    step = "Program 2 step 5: hold R2, the ramp buzzes and does not go out. Turn the right servo round (Servos tab).";
+                    caught = w.robot.servoMechs.rampMirrored();
+                    break;
+                }
                 default:
                     text = type;
                     step = "";

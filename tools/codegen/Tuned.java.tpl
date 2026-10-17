@@ -18,36 +18,23 @@ public final class Tuned {
     // program 6 step 1 (E-10): 1 = Pedro's velocity is in field directions; firing while moving needs it
     public static double velocityFrameField = {{tuning.velocityFrameField}};
 
-    // shared yaw motor: encoder ticks per degree of each turret (signed), soft limits in front-turret degrees (G-1 part A)
-    public static double yawTicksPerDegFront = {{tuning.yawTicksPerDegFront}};
-    public static double yawTicksPerDegBack = {{tuning.yawTicksPerDegBack}};
-    public static double yawMinDeg = {{tuning.yawMinDeg}};
-    public static double yawMaxDeg = {{tuning.yawMaxDeg}};
-
-    // yaw feedforward (G-1 part B) and position gain (G-1 part C), all from the Yaw Tuner
-    public static double yawKs = {{tuning.yawKs}};
-    public static double yawKv = {{tuning.yawKv}};
-    public static double yawPowerSign = {{tuning.yawPowerSign}};
-    public static double yawTuningVoltage = {{tuning.yawTuningVoltage}};
-    public static double yawKp = {{tuning.yawKp}};
-    // gear play between the yaw motor and the front turret, end to end (E-6, program 3)
-    public static double yawPlayDeg = {{tuning.yawPlayDeg}};
-    // optional index switch: front-turret angle where it turns on while turning left (program 3)
-    public static double yawIndexDeg = {{tuning.yawIndexDeg}};
+    // turret yaw servos, one per turret (program 3): servo position at straight forward, servo position per degree
+    // (+ = turret turns left), soft limits in that turret's own degrees, and how fast the slower turret turns
+    public static double frontYawForward = {{tuning.frontYawForward}};
+    public static double frontYawPerDeg = {{tuning.frontYawPerDeg}};
+    public static double frontYawMinDeg = {{tuning.frontYawMinDeg}};
+    public static double frontYawMaxDeg = {{tuning.frontYawMaxDeg}};
+    public static double backYawForward = {{tuning.backYawForward}};
+    public static double backYawPerDeg = {{tuning.backYawPerDeg}};
+    public static double backYawMinDeg = {{tuning.backYawMinDeg}};
+    public static double backYawMaxDeg = {{tuning.backYawMaxDeg}};
+    public static double yawDegPerS = {{tuning.yawDegPerS}};
     // aim correction each launcher scored with (programs 8 / 9), in that turret's own degrees, + = further left.
-    // A few degrees at most: more means the turret zero was off (TurretZero)
+    // A few degrees at most: more means program 3's forward position was off
     public static double frontYawTrimDeg = {{tuning.frontYawTrimDeg}};
     public static double backYawTrimDeg = {{tuning.backYawTrimDeg}};
-    // turret homing from the end stops (program 3, no extra hardware): front-turret angle of each stop that repeated
-    // within 0.5 deg when touched slowly (NaN = that stop cannot be used), the speeds in deg/s of the fast hit, the
-    // slow touch and the crossing between the stops
-    public static double yawHomeLeftDeg = {{tuning.yawHomeLeftDeg}};
-    public static double yawHomeRightDeg = {{tuning.yawHomeRightDeg}};
-    public static double yawHomeFastDegS = {{tuning.yawHomeFastDegS}};
-    public static double yawHomeCreepDegS = {{tuning.yawHomeCreepDegS}};
-    public static double yawHomeCrossDegS = {{tuning.yawHomeCrossDegS}};
 
-    // front launcher (NECTAR): flywheel velocity PIDF, ready band, idle (G-3), hood servo range (E-7)
+    // front launcher (NECTAR): flywheel velocity PIDF, ready band, idle (G-3)
     public static double frontFlywheelP = {{tuning.frontFlywheelP}};
     public static double frontFlywheelI = {{tuning.frontFlywheelI}};
     public static double frontFlywheelD = {{tuning.frontFlywheelD}};
@@ -60,79 +47,61 @@ public final class Tuned {
     public static double frontReadyBandHigh = {{tuning.frontReadyBandHigh}};
     public static double frontReadyBandLowSpeed = {{tuning.frontReadyBandLowSpeed}};
     public static double frontReadyBandHighSpeed = {{tuning.frontReadyBandHighSpeed}};
-    public static double frontHoodMin = {{tuning.frontHoodMin}};
-    public static double frontHoodMax = {{tuning.frontHoodMax}};
 
 
-    // front shot table: up to 16 measured points (distance in, speed ticks/s, hood, feed power), G-5
+    // front shot table: up to 16 measured points (distance in, speed ticks/s, feed power), G-5
     public static double frontShot01Distance = {{tuning.frontShot01Distance}};
     public static double frontShot01Speed = {{tuning.frontShot01Speed}};
-    public static double frontShot01Hood = {{tuning.frontShot01Hood}};
     public static double frontShot01Feed = {{tuning.frontShot01Feed}};
     public static double frontShot02Distance = {{tuning.frontShot02Distance}};
     public static double frontShot02Speed = {{tuning.frontShot02Speed}};
-    public static double frontShot02Hood = {{tuning.frontShot02Hood}};
     public static double frontShot02Feed = {{tuning.frontShot02Feed}};
     public static double frontShot03Distance = {{tuning.frontShot03Distance}};
     public static double frontShot03Speed = {{tuning.frontShot03Speed}};
-    public static double frontShot03Hood = {{tuning.frontShot03Hood}};
     public static double frontShot03Feed = {{tuning.frontShot03Feed}};
     public static double frontShot04Distance = {{tuning.frontShot04Distance}};
     public static double frontShot04Speed = {{tuning.frontShot04Speed}};
-    public static double frontShot04Hood = {{tuning.frontShot04Hood}};
     public static double frontShot04Feed = {{tuning.frontShot04Feed}};
     public static double frontShot05Distance = {{tuning.frontShot05Distance}};
     public static double frontShot05Speed = {{tuning.frontShot05Speed}};
-    public static double frontShot05Hood = {{tuning.frontShot05Hood}};
     public static double frontShot05Feed = {{tuning.frontShot05Feed}};
     public static double frontShot06Distance = {{tuning.frontShot06Distance}};
     public static double frontShot06Speed = {{tuning.frontShot06Speed}};
-    public static double frontShot06Hood = {{tuning.frontShot06Hood}};
     public static double frontShot06Feed = {{tuning.frontShot06Feed}};
     public static double frontShot07Distance = {{tuning.frontShot07Distance}};
     public static double frontShot07Speed = {{tuning.frontShot07Speed}};
-    public static double frontShot07Hood = {{tuning.frontShot07Hood}};
     public static double frontShot07Feed = {{tuning.frontShot07Feed}};
     public static double frontShot08Distance = {{tuning.frontShot08Distance}};
     public static double frontShot08Speed = {{tuning.frontShot08Speed}};
-    public static double frontShot08Hood = {{tuning.frontShot08Hood}};
     public static double frontShot08Feed = {{tuning.frontShot08Feed}};
     public static double frontShot09Distance = {{tuning.frontShot09Distance}};
     public static double frontShot09Speed = {{tuning.frontShot09Speed}};
-    public static double frontShot09Hood = {{tuning.frontShot09Hood}};
     public static double frontShot09Feed = {{tuning.frontShot09Feed}};
     public static double frontShot10Distance = {{tuning.frontShot10Distance}};
     public static double frontShot10Speed = {{tuning.frontShot10Speed}};
-    public static double frontShot10Hood = {{tuning.frontShot10Hood}};
     public static double frontShot10Feed = {{tuning.frontShot10Feed}};
     public static double frontShot11Distance = {{tuning.frontShot11Distance}};
     public static double frontShot11Speed = {{tuning.frontShot11Speed}};
-    public static double frontShot11Hood = {{tuning.frontShot11Hood}};
     public static double frontShot11Feed = {{tuning.frontShot11Feed}};
     public static double frontShot12Distance = {{tuning.frontShot12Distance}};
     public static double frontShot12Speed = {{tuning.frontShot12Speed}};
-    public static double frontShot12Hood = {{tuning.frontShot12Hood}};
     public static double frontShot12Feed = {{tuning.frontShot12Feed}};
     public static double frontShot13Distance = {{tuning.frontShot13Distance}};
     public static double frontShot13Speed = {{tuning.frontShot13Speed}};
-    public static double frontShot13Hood = {{tuning.frontShot13Hood}};
     public static double frontShot13Feed = {{tuning.frontShot13Feed}};
     public static double frontShot14Distance = {{tuning.frontShot14Distance}};
     public static double frontShot14Speed = {{tuning.frontShot14Speed}};
-    public static double frontShot14Hood = {{tuning.frontShot14Hood}};
     public static double frontShot14Feed = {{tuning.frontShot14Feed}};
     public static double frontShot15Distance = {{tuning.frontShot15Distance}};
     public static double frontShot15Speed = {{tuning.frontShot15Speed}};
-    public static double frontShot15Hood = {{tuning.frontShot15Hood}};
     public static double frontShot15Feed = {{tuning.frontShot15Feed}};
     public static double frontShot16Distance = {{tuning.frontShot16Distance}};
     public static double frontShot16Speed = {{tuning.frontShot16Speed}};
-    public static double frontShot16Hood = {{tuning.frontShot16Hood}};
     public static double frontShot16Feed = {{tuning.frontShot16Feed}};
     public static double frontGateClosed = {{tuning.frontGateClosed}};
     public static double frontGateOpen = {{tuning.frontGateOpen}};
 
-    // back launcher (POLLEN): flywheel velocity PIDF, ready band, idle (G-3), hood servo range (E-7)
+    // back launcher (POLLEN): flywheel velocity PIDF, ready band, idle (G-3)
     public static double backFlywheelP = {{tuning.backFlywheelP}};
     public static double backFlywheelI = {{tuning.backFlywheelI}};
     public static double backFlywheelD = {{tuning.backFlywheelD}};
@@ -145,86 +114,69 @@ public final class Tuned {
     public static double backReadyBandHigh = {{tuning.backReadyBandHigh}};
     public static double backReadyBandLowSpeed = {{tuning.backReadyBandLowSpeed}};
     public static double backReadyBandHighSpeed = {{tuning.backReadyBandHighSpeed}};
-    public static double backHoodMin = {{tuning.backHoodMin}};
-    public static double backHoodMax = {{tuning.backHoodMax}};
 
 
-    // back shot table: up to 16 measured points (distance in, speed ticks/s, hood, feed power), G-5
+    // back shot table: up to 16 measured points (distance in, speed ticks/s, feed power), G-5
     public static double backShot01Distance = {{tuning.backShot01Distance}};
     public static double backShot01Speed = {{tuning.backShot01Speed}};
-    public static double backShot01Hood = {{tuning.backShot01Hood}};
     public static double backShot01Feed = {{tuning.backShot01Feed}};
     public static double backShot02Distance = {{tuning.backShot02Distance}};
     public static double backShot02Speed = {{tuning.backShot02Speed}};
-    public static double backShot02Hood = {{tuning.backShot02Hood}};
     public static double backShot02Feed = {{tuning.backShot02Feed}};
     public static double backShot03Distance = {{tuning.backShot03Distance}};
     public static double backShot03Speed = {{tuning.backShot03Speed}};
-    public static double backShot03Hood = {{tuning.backShot03Hood}};
     public static double backShot03Feed = {{tuning.backShot03Feed}};
     public static double backShot04Distance = {{tuning.backShot04Distance}};
     public static double backShot04Speed = {{tuning.backShot04Speed}};
-    public static double backShot04Hood = {{tuning.backShot04Hood}};
     public static double backShot04Feed = {{tuning.backShot04Feed}};
     public static double backShot05Distance = {{tuning.backShot05Distance}};
     public static double backShot05Speed = {{tuning.backShot05Speed}};
-    public static double backShot05Hood = {{tuning.backShot05Hood}};
     public static double backShot05Feed = {{tuning.backShot05Feed}};
     public static double backShot06Distance = {{tuning.backShot06Distance}};
     public static double backShot06Speed = {{tuning.backShot06Speed}};
-    public static double backShot06Hood = {{tuning.backShot06Hood}};
     public static double backShot06Feed = {{tuning.backShot06Feed}};
     public static double backShot07Distance = {{tuning.backShot07Distance}};
     public static double backShot07Speed = {{tuning.backShot07Speed}};
-    public static double backShot07Hood = {{tuning.backShot07Hood}};
     public static double backShot07Feed = {{tuning.backShot07Feed}};
     public static double backShot08Distance = {{tuning.backShot08Distance}};
     public static double backShot08Speed = {{tuning.backShot08Speed}};
-    public static double backShot08Hood = {{tuning.backShot08Hood}};
     public static double backShot08Feed = {{tuning.backShot08Feed}};
     public static double backShot09Distance = {{tuning.backShot09Distance}};
     public static double backShot09Speed = {{tuning.backShot09Speed}};
-    public static double backShot09Hood = {{tuning.backShot09Hood}};
     public static double backShot09Feed = {{tuning.backShot09Feed}};
     public static double backShot10Distance = {{tuning.backShot10Distance}};
     public static double backShot10Speed = {{tuning.backShot10Speed}};
-    public static double backShot10Hood = {{tuning.backShot10Hood}};
     public static double backShot10Feed = {{tuning.backShot10Feed}};
     public static double backShot11Distance = {{tuning.backShot11Distance}};
     public static double backShot11Speed = {{tuning.backShot11Speed}};
-    public static double backShot11Hood = {{tuning.backShot11Hood}};
     public static double backShot11Feed = {{tuning.backShot11Feed}};
     public static double backShot12Distance = {{tuning.backShot12Distance}};
     public static double backShot12Speed = {{tuning.backShot12Speed}};
-    public static double backShot12Hood = {{tuning.backShot12Hood}};
     public static double backShot12Feed = {{tuning.backShot12Feed}};
     public static double backShot13Distance = {{tuning.backShot13Distance}};
     public static double backShot13Speed = {{tuning.backShot13Speed}};
-    public static double backShot13Hood = {{tuning.backShot13Hood}};
     public static double backShot13Feed = {{tuning.backShot13Feed}};
     public static double backShot14Distance = {{tuning.backShot14Distance}};
     public static double backShot14Speed = {{tuning.backShot14Speed}};
-    public static double backShot14Hood = {{tuning.backShot14Hood}};
     public static double backShot14Feed = {{tuning.backShot14Feed}};
     public static double backShot15Distance = {{tuning.backShot15Distance}};
     public static double backShot15Speed = {{tuning.backShot15Speed}};
-    public static double backShot15Hood = {{tuning.backShot15Hood}};
     public static double backShot15Feed = {{tuning.backShot15Feed}};
     public static double backShot16Distance = {{tuning.backShot16Distance}};
     public static double backShot16Speed = {{tuning.backShot16Speed}};
-    public static double backShot16Hood = {{tuning.backShot16Hood}};
     public static double backShot16Feed = {{tuning.backShot16Feed}};
     public static double backGateClosed = {{tuning.backGateClosed}};
     public static double backGateOpen = {{tuning.backGateOpen}};
+    // the back gate's second servo (other side, mirrored), measured on its own (E-8)
+    public static double backGate2Closed = {{tuning.backGate2Closed}};
+    public static double backGate2Open = {{tuning.backGate2Open}};
 
     // seconds for the slowest gate to go from closed to fully open (E-8)
     public static double gateTravelS = {{tuning.gateTravelS}};
 
-    // ramp servo positions (E-8)
-    public static double rampStowed = {{tuning.rampStowed}};
-    public static double rampDeployed = {{tuning.rampDeployed}};
-    // ramp travel time, fully in to fully out, from a slow-motion video (program 4)
-    public static double rampTravelS = {{tuning.rampTravelS}};
+    // ramp (2 continuous servos winding strings): seconds out and in at Ramp.RAMP_POWER, from slow motion (program 4)
+    public static double rampOutS = {{tuning.rampOutS}};
+    public static double rampInS = {{tuning.rampInS}};
 
     // red CELL opening centres, field frame inches (H-1); blue = 180-degree rotation
     public static double redFarCellX = {{tuning.redFarCellX | in_frame:pedro3_field}};

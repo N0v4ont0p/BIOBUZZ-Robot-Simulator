@@ -1,5 +1,5 @@
 """Programs use what earlier programs saved on the robot, with no build in between (LiveResults).
-Program 2 is run for real: its directions go only into the robot's results file. Program 4's gate and hood positions
+Program 2 is run for real: its directions go only into the robot's results file. Program 4's gate positions and ramp times
 are added to the results file as if program 4 had run. Program 7 then starts with no NOT READY line, shows the yellow
 "from the robot's results file" line, and both flywheels throw the element out (so it used program 2's directions).
 A rebuild in between (as a restart does) must not put the code's placeholder directions back. At the end: one copy,
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         exp = test_p2_directions.run(s)
         test_p2_directions.check(s, exp)
         s.stop()
-        s.wait(lambda st: st["ds"]["active"] == "3 Yaw Tuner" and st["ds"]["state"] == "INIT", 10, "program 3 auto-loaded")
+        s.wait(lambda st: st["ds"]["active"] == "3 Turret Servos" and st["ds"]["state"] == "INIT", 10, "program 3 auto-loaded")
         builds = s.get("loop/status")["builtAt"]
 
         now = int(time.time() * 1000)

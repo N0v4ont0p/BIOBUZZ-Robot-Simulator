@@ -17,10 +17,8 @@ def run(alliance, seed):
     with running_sim(seed=seed) as s:
         s.preset_config()
         values = tuned_robot(s)
-        # ramp positions and a shot table, so the shots are ready shots (not the timeout fallback) and the RAMP leg deploys
+        # a shot table, so the shots are ready shots (not the timeout fallback); tuned_robot has the ramp times
         exp, gd = expected(s), guide(s)
-        for k in ("rampStowed", "rampDeployed"):
-            values[k] = round(float(pick(exp, gd, k)), 4)
         distances = (30, 40, 50, 60, 70, 80, 90, 100)
         values.update(shot_table(s, 0, distances))
         values.update(shot_table(s, 1, distances))

@@ -18,8 +18,8 @@ import java.util.Map;
 // The results loop: copy the results off the robot ("adb pull"), the programmer step (coach mode does it with
 // tools/apply_results.py; real mode shows what the programmer will do), and the report card.
 public final class LoopRoutes {
-    private static final String[] PROGRAMS = {"1 Check Devices", "2 Motor Directions", "3 Yaw Tuner", "4 Servo Positions",
-            "5 Drive Tuning", "6 Position Check", "7 Flywheel Tuner", "8 Front Shot Tuner", "9 Back Shot Tuner"};
+    private static final String[] PROGRAMS = {"1 Check Devices", "2 Motor Directions", "3 Turret Servos", "4 Servo Positions",
+            "5 Drive Tuning", "6 Position Check", "7 Flywheel Tuner", "8 Back Shot Tuner", "9 Front Shot Tuner"};
 
     private LoopRoutes() {
     }

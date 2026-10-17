@@ -17,7 +17,7 @@ public final class Hub {
     public final MotorPort[] motors = new MotorPort[4];
     public final ServoPort[] servos = new ServoPort[6];
     public final String[] i2c = new String[4];   // part id on each bus (only the Pinpoint here)
-    public final String[] digital = new String[8];   // what is plugged into each digital port ("yawIndex": the turret's magnetic switch)
+    public final String[] digital = new String[8];   // what is plugged into each digital port (nothing on this robot yet)
     private final long readNanos, writeNanos;
     public final double voltageDrop;
     public volatile double volts;

@@ -7,7 +7,7 @@ import java.util.Random;
 // A hobby servo (goBILDA 2000 series style) driving a linkage between two mechanical stops. The hub sends a pulse
 // every 20 ms; the servo picks up the new width at the next frame and drives its horn there at its loaded speed,
 // with a short speed-up and slow-down. The linkage turns the horn angle into the mechanism's own angle
-// ("out": hood launch angle, ramp angle out from vertical, gate arm angle up from hanging):
+// ("out": gate arm angle up from hanging, turret angle):
 //   out = refDeg + dir * gain * horn,   horn = (pulse - 1500 us) * degPerUs + offsetDeg
 // dir +1: a higher servo position moves the mechanism up / out / open.
 // Commanding past a stop (or into an obstacle) makes it press there: it buzzes, draws current, heats up, and
@@ -29,10 +29,12 @@ public class ServoModel {
     public int replaced;
 
     public volatile double pulseUs = Double.NaN;   // NaN = no signal
-    private double latchedUs = Double.NaN, frameT;
+    protected double latchedUs = Double.NaN, frameT;
     public double angleDeg, velocity, commandDeg, targetDeg;
     public double outMin, outMax;                  // stops plus obstacles this step (set by the mechanism)
     public double load, amps, heat;
+    // pushed by something besides its stops this step, 0-1 (the back gate's other servo disagreeing): it buzzes as at a stop
+    public double extraLoad;
     public boolean burnedOut;
 
     // the last finished move up / out / open of 5 deg or more, first movement to arrival (gate travel time)
@@ -122,6 +124,7 @@ public class ServoModel {
                 double beyond = Math.max(commandDeg - hi, lo - commandDeg);
                 load = Math.max(0, Math.min(1, (beyond - DEADBAND_DEG) / P_BAND_DEG));
             }
+            load = Math.max(load, extraLoad);
             amps = 0.02 + (velocity != 0 ? 0.6 : 0) + load * stallAmps;
             // servo power comes from the hub's 5 V regulator
             battery.draw(amps * 5 / 12 / 0.9);

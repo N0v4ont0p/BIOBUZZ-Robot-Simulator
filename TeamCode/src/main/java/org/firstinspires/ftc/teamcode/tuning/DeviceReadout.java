@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.tuning;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -18,11 +19,13 @@ import java.util.Locale;
 @TeleOp(name = "1 Check Devices", group = "19859 Setup")
 public class DeviceReadout extends LinearOpMode {
     private static final String[] MOTORS = {DeviceNames.LEFT_FRONT, DeviceNames.LEFT_BACK, DeviceNames.RIGHT_FRONT,
-            DeviceNames.RIGHT_BACK, DeviceNames.INTAKE, DeviceNames.YAW, DeviceNames.FRONT_FLYWHEEL, DeviceNames.BACK_FLYWHEEL};
+            DeviceNames.RIGHT_BACK, DeviceNames.INTAKE, DeviceNames.POLLEN_FEED, DeviceNames.FRONT_FLYWHEEL, DeviceNames.BACK_FLYWHEEL};
     private static final String[] MOTOR_PARTS = {"left-front wheel", "left-back wheel", "right-front wheel",
-            "right-back wheel", "intake", "turrets (yaw)", "front flywheel", "back flywheel"};
-    private static final String[] SERVOS = {DeviceNames.FRONT_HOOD, DeviceNames.BACK_HOOD, DeviceNames.RAMP,
-            DeviceNames.FRONT_GATE, DeviceNames.BACK_GATE};
+            "right-back wheel", "intake roller", "POLLEN feeder wheels", "front flywheel", "back flywheel"};
+    private static final String[] SERVOS = {DeviceNames.FRONT_GATE, DeviceNames.BACK_GATE, DeviceNames.BACK_GATE_2,
+            DeviceNames.FRONT_YAW, DeviceNames.BACK_YAW};
+    // the ramp servos are continuous rotation: configured as "Continuous Rotation Servo", not "Servo"
+    private static final String[] CR_SERVOS = {DeviceNames.RAMP_LEFT, DeviceNames.RAMP_RIGHT};
     // check thresholds, not robot measurements
     private static final int ENCODER_MOVED_TICKS = 30;
     private static final int POD_MOVED_TICKS = 1000;
@@ -52,6 +55,14 @@ public class DeviceReadout extends LinearOpMode {
                 missing.append(SERVOS[i]).append(' ');
             }
         }
+        for (String name : CR_SERVOS) {
+            try {
+                hardwareMap.get(CRServo.class, name);
+                found++;
+            } catch (IllegalArgumentException e) {
+                missing.append(name).append(" (as Continuous Rotation Servo) ");
+            }
+        }
         GoBildaPinpointDriver pinpoint = null;
         try {
             pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, DeviceNames.PINPOINT);
@@ -59,7 +70,7 @@ public class DeviceReadout extends LinearOpMode {
         } catch (IllegalArgumentException e) {
             missing.append(DeviceNames.PINPOINT);
         }
-        int total = MOTORS.length + SERVOS.length + 1;
+        int total = MOTORS.length + SERVOS.length + CR_SERVOS.length + 1;
 
         while (opModeInInit()) {
             g.header(0, 0, "Before you start");

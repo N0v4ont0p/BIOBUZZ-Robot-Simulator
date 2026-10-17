@@ -1,7 +1,7 @@
-// Turret close-up for program 3 (and E-6). Both turrets from above with the robot's edges; you judge "straight" by
-// eye, optionally with a straightedge laid along an edge. Drag around a turret to turn it by hand (it resists at the
-// stops and when the cable gets tight). Wiggle rocks one turret with the yaw motor held, against a degree scale.
-// The angles stay hidden unless the Coach readout is on.
+// Turret close-up for program 3. Both turrets from above with the robot's edges; each has its own yaw servo. You
+// judge "straight" by eye, optionally with a straightedge laid along an edge. While a servo has no signal its turret
+// turns by hand (drag around it); once program 3 moves it, the servo holds it. The angles stay hidden unless the
+// Coach readout is on.
 Bench.register({
   id: 'turret', title: 'Turret', order: 30,
   mount(el) {
@@ -13,10 +13,10 @@ Bench.register({
         .tu-coach[hidden] { display: none; }
       </style>
       <h3>Turrets close-up (top view, front is up)</h3>
-      <p class="hint">Drag around a turret to turn it by hand. "Straight left" = barrel parallel to the robot's FRONT edge
-        (front turret) or BACK edge (back turret); "forward" = parallel to the side edges. Judge it by eye, or lay the
-        straightedge along an edge and slide it over the barrel. Turn into a stop slowly: the cable turns orange when it
-        is just tight, red when you are pulling on it.</p>
+      <p class="hint">"Straight left" = barrel parallel to the robot's FRONT edge (front turret) or BACK edge (back turret);
+        "forward" = parallel to the side edges. Judge it by eye, or lay the straightedge along an edge and slide it over the
+        barrel. The cable turns orange when it is just tight, red when the servo is pulling on it. A turret with no servo
+        signal yet turns by hand (drag around it).</p>
       <div class="controls">
         <span>Straightedge:</span>
         <button class="btn secondary" data-ruler="off">off</button>
@@ -24,9 +24,8 @@ Bench.register({
         <button class="btn secondary" data-ruler="v">along a side edge</button>
       </div>
       <div class="controls">
-        <button class="btn secondary" data-wiggle="front">Wiggle front turret (E-6)</button>
-        <button class="btn secondary" data-wiggle="back">Wiggle back turret (E-6)</button>
-        <button class="btn secondary" id="tuFix">Re-route / replace the cable</button>
+        <button class="btn secondary" data-fix="front">Re-route the front cable</button>
+        <button class="btn secondary" data-fix="back">Re-route the back cable</button>
         <label><input type="checkbox" id="tuCoach"> Coach readout (shows hidden numbers)</label>
       </div>
       <div class="controls" id="tuTurn">${['front', 'back'].map(t => `<span>${t} turret:</span>
@@ -34,10 +33,9 @@ Bench.register({
         <button class="btn secondary" data-turn="${t}" data-deg="1">&#10226; 1&deg;</button>
         <button class="btn secondary" data-turn="${t}" data-deg="-1">1&deg; &#10227;</button>
         <button class="btn secondary" data-turn="${t}" data-deg="-10">10&deg; &#10227;</button>`).join('<span style="width:12px"></span>')}
-        <span class="hint">hold to keep turning (same as turning it by hand)</span></div>
+        <span class="hint">by hand, only while that servo has no signal; hold to keep turning</span></div>
       <div id="tuMsg"></div>
       <svg viewBox="0 0 600 640" class="tu-svg" id="tuSvg"></svg>
-      <div id="tuDial"></div>
       <div class="kv tu-coach" id="tuCoachKv" hidden></div>`;
     this.build(el);
     // turn by hand in steps: a press turns once, holding keeps turning 5 times a second
@@ -97,67 +95,39 @@ Bench.register({
     });
     el.querySelectorAll('[data-ruler]').forEach(b => b.onclick = () => { this.ruler.mode = b.dataset.ruler; this.placeRuler(); });
     this.placeRuler();
-    this.dial = null;
-    el.querySelectorAll('[data-wiggle]').forEach(b => b.onclick = () => {
-      this.dial = {which: b.dataset.wiggle, start: null, min: 0, max: 0};
-      App.hand('turret', 'wiggle', {back: b.dataset.wiggle === 'back'});
-    });
-    el.querySelector('#tuFix').onclick = () => App.hand('turret', 'fixCable');
+    el.querySelectorAll('[data-fix]').forEach(b => b.onclick = () => App.hand('turret', 'fixCable', {back: b.dataset.fix === 'back'}));
     el.querySelector('#tuCoach').onchange = (e) => { el.querySelector('#tuCoachKv').hidden = !e.target.checked; };
   },
 
   update(el, s) {
     const tu = s.world && s.world.turret;
-    if (!tu) return;
+    if (!tu || !tu.front) return;
+    const msg = [];
+    let damaged = '';
     this.turrets.forEach((t, i) => {
-      const deg = i ? tu.backDeg : tu.frontDeg, a = deg * Math.PI / 180;
+      const one = i ? tu.back : tu.front, name = i ? 'back' : 'front', deg = one.deg, a = deg * Math.PI / 180;
       t.body.setAttribute('transform', `rotate(${-deg} ${t.x} ${t.y})`);
-      const tension = i ? 0 : tu.cableTension;
+      const tension = one.cableTension;
       const ex = t.x + Math.sin(a) * 58, ey = t.y + Math.cos(a) * 58;
       const sag = 45 * (1 - tension);
       const mx = (ex + t.anchor[0]) / 2, my = (ey + t.anchor[1]) / 2 + sag;
       t.cable.setAttribute('d', `M${ex},${ey} Q${mx},${my} ${t.anchor[0]},${t.anchor[1]}`);
-      t.cable.setAttribute('stroke', !i && (tu.cableDamaged || tension > 0.5) ? 'var(--bad)' : tension > 0 ? 'var(--warn)' : 'var(--part)');
-      t.ring.setAttribute('stroke', !i && tu.atStop ? 'var(--bad)' : tu.hand === (i ? 'back' : 'front') ? 'var(--accent)' : 'var(--part)');
+      t.cable.setAttribute('stroke', one.cableDamaged || tension > 0.5 ? 'var(--bad)' : tension > 0 ? 'var(--warn)' : 'var(--part)');
+      t.ring.setAttribute('stroke', one.atStop || one.buzz > 0.12 ? 'var(--bad)' : one.powered ? 'var(--accent)' : 'var(--part)');
+      if (one.atStop) msg.push(`The ${name} turret is against its ${one.atStop} end` + (one.buzz > 0.12 ? ': the servo is buzzing, pressing into it.' : '.'));
+      if (one.cableTension > 0 && !one.cableDamaged) msg.push(`The ${name} cable is tight (turning ${one.cableSide}).` + (one.cableTension > 0.5 ? ' It is being pulled: turn back!' : ''));
+      if (one.cableDamaged) damaged += `<p class="tu-warn">${name} cable damaged: it was pulled past its slack. Re-route / replace it before running the turret again.</p>`;
     });
-    const msg = [];
-    if (tu.atStop) msg.push(`The front turret is against its ${tu.atStop} end: it will not turn further that way.`);
-    if (tu.cableTension > 0 && !tu.cableDamaged) msg.push(`The cable is tight (turning ${tu.cableSide}).` + (tu.cableTension > 0.5 ? ' You are pulling on it: turn back!' : ''));
-    const box = el.querySelector('#tuMsg');
-    box.innerHTML = (tu.cableDamaged ? '<p class="tu-warn">Cable damaged: it was pulled past its slack. Re-route / replace it before running the turret again.</p>' : '') +
-      msg.map(m => `<p class="hint">${App.esc(m)}</p>`).join('');
-    this.drawDial(el, tu);
+    el.querySelector('#tuMsg').innerHTML = damaged + msg.map(m => `<p class="hint">${App.esc(m)}</p>`).join('');
     if (!el.querySelector('#tuCoachKv').hidden) {
-      const c = tu.coach, off = (d) => { const r = ((d % 90) + 135) % 90 - 45; return r.toFixed(1); };
+      const off = (d) => { const r = ((d % 90) + 135) % 90 - 45; return r.toFixed(1); };
+      const ends = (o) => `${o.leftLimitDeg.toFixed(1)}&deg; (${o.leftIs}) / ${o.rightLimitDeg.toFixed(1)}&deg; (${o.rightIs})`;
       el.querySelector('#tuCoachKv').innerHTML =
-        `<span>Front / back turret angle</span><b>${tu.frontDeg.toFixed(1)}&deg; / ${tu.backDeg.toFixed(1)}&deg;</b>` +
-        `<span>Off the nearest straight line</span><b>front ${off(tu.frontDeg)}&deg;, back ${off(tu.backDeg)}&deg;</b>` +
-        `<span>Yaw encoder (front degrees)</span><b>${c.encoderDeg.toFixed(1)}&deg;</b>` +
-        `<span>Left / right end of travel</span><b>${c.leftLimitDeg.toFixed(1)}&deg; (${c.leftIs}) / ${c.rightLimitDeg.toFixed(1)}&deg; (${c.rightIs})</b>` +
-        `<span>Play front / back (E-6)</span><b>${c.playFrontDeg.toFixed(2)}&deg; / ${c.playBackDeg.toFixed(2)}&deg;</b>`;
+        `<span>Front / back turret angle</span><b>${tu.front.deg.toFixed(1)}&deg; / ${tu.back.deg.toFixed(1)}&deg;</b>` +
+        `<span>Off the nearest straight line</span><b>front ${off(tu.front.deg)}&deg;, back ${off(tu.back.deg)}&deg;</b>` +
+        `<span>Front left / right end of travel</span><b>${ends(tu.front)}</b>` +
+        `<span>Back left / right end of travel</span><b>${ends(tu.back)}</b>`;
     }
-  },
-
-  // E-6: a dial gauge on the barrel tip, 10x magnified, with marks where it went furthest each way
-  drawDial(el, tu) {
-    const box = el.querySelector('#tuDial'), d = this.dial;
-    if (!d) { box.innerHTML = ''; return; }
-    const deg = d.which === 'back' ? tu.backDeg : tu.frontDeg;
-    if (tu.wiggle === d.which) {
-      if (d.start == null) d.start = deg;
-      d.min = Math.min(d.min, deg - d.start);
-      d.max = Math.max(d.max, deg - d.start);
-    }
-    const P = 50, X = 300, rel = d.start == null ? 0 : deg - d.start;
-    let ticks = '';
-    for (let k = -16; k <= 16; k++) {
-      const x = X + k * P / 2;
-      ticks += `<line x1="${x}" x2="${x}" y1="20" y2="${k % 2 ? 30 : 38}" stroke="var(--ink)"/>` + (k % 2 ? '' : `<text x="${x}" y="52" font-size="11" text-anchor="middle" fill="var(--muted)">${-k / 2}</text>`);
-    }
-    const mark = (v) => `<line x1="${X - v * P}" x2="${X - v * P}" y1="8" y2="40" stroke="var(--bad)" stroke-width="2"/>`;
-    box.innerHTML = `<p class="hint">${tu.wiggle ? 'Rocking' : 'Rocked'} the ${d.which} turret with the yaw motor held. Its play is the distance between the two red marks (scale in degrees).</p>
-      <svg viewBox="0 0 600 60" class="tu-svg">${ticks}${d.start == null ? '' : mark(d.min) + mark(d.max)}
-        <polygon points="${X - rel * P},20 ${X - rel * P - 6},6 ${X - rel * P + 6},6" fill="var(--accent)"/></svg>`;
   },
 
   toSvg(svg, m) {

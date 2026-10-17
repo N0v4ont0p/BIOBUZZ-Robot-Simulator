@@ -22,10 +22,9 @@ sys.path.insert(0, HERE)
 import set_tuning  # noqa: E402
 
 SIDES = ("front", "back")
-INTO_YAML = ["yawTicksPerDegFront", "yawTicksPerDegBack", "yawMinDeg", "yawMaxDeg", "yawPowerSign", "yawKs", "yawKv",
-             "yawTuningVoltage", "yawKp",
-             "frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
-             "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS"]
+INTO_YAML = [s + k for s in SIDES for k in ("YawForward", "YawPerDeg", "YawMinDeg", "YawMaxDeg")] + ["yawDegPerS",
+             "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "backGate2Closed", "backGate2Open", "gateTravelS",
+             "rampOutS", "rampInS"]
 FLYWHEEL = ["FlywheelP", "FlywheelI", "FlywheelD", "FlywheelF", "ReadyBand", "IdleVelocity", "FlywheelVoltage",
             "ReadyBandLow", "ReadyBandHigh", "ReadyBandLowSpeed", "ReadyBandHighSpeed"]
 INTO_YAML += [s + k for s in SIDES for k in FLYWHEEL]
@@ -35,23 +34,19 @@ PEDRO = ["xPodOffset", "yPodOffset", "maxAchievableForwardVelocity", "maxAchieva
          "forwardBrakingLinearCoefficient", "forwardBrakingQuadraticCoefficient", "strafeBrakingLinearCoefficient",
          "strafeBrakingQuadraticCoefficient", "forwardTranslationalPrimaryKP", "forwardTranslationalSecondaryKP",
          "strafeTranslationalPrimaryKP", "strafeTranslationalSecondaryKP", "coastKV", "brakeKV"]
-INTO_YAML += PEDRO + ["podTicksPerMm", "imuYawScalar", "velocityFrameField", "yawPlayDeg", "yawIndexDeg"]
-# programs 8 / 9: the yaw trim each launcher scored with; past MAX_TRIM_DEG it is a bad turret zero, not aim (AutoAim)
+INTO_YAML += PEDRO + ["podTicksPerMm", "imuYawScalar", "velocityFrameField"]
+# programs 8 / 9: the yaw trim each launcher scored with; past MAX_TRIM_DEG it is a wrong forward position, not aim (AutoAim)
 TRIMS = ["frontYawTrimDeg", "backYawTrimDeg"]
 MAX_TRIM_DEG = 10
 INTO_YAML += TRIMS
-# programs 8 / 9: the hood direction check (+1 / -1)
-# program 3's turret homing (NaN = that stop or the whole homing is not usable, nothing entered)
-INTO_YAML += ["yawHomeLeftDeg", "yawHomeRightDeg", "yawHomeFastDegS", "yawHomeCreepDegS", "yawHomeCrossDegS"]
-INTO_CODE = {"intakeReversed": "Intake.REVERSED", "frontFlywheelReversed": "Launcher.FRONT_REVERSED",
-             "backFlywheelReversed": "Launcher.BACK_REVERSED"}
+INTO_CODE = {"intakeReversed": "Intake.REVERSED", "pollenFeedReversed": "Intake.POLLEN_REVERSED", "frontFlywheelReversed": "Launcher.FRONT_REVERSED",
+             "backFlywheelReversed": "Launcher.BACK_REVERSED", "rampReversed": "Ramp.RAMP_REVERSED"}
 DIRECTION_KEYS = list(set_tuning.DIRECTIONS)
-INFO = ["devicesFound", "batteryVolts", "encodersNotCounting", "encodersCrossed", "yawReactionTimeS", "yawSettleS", "yawPastTargetDeg",
-        "yawSpeedPoints", "velocityFrame", "loopErrorInches", "loopErrorDegrees", "yawHomeSpreadDeg", "yawHomeTypicalS", "yawHomeWorstS"]
+INFO = ["devicesFound", "batteryVolts", "encodersNotCounting", "encodersCrossed", "velocityFrame", "loopErrorInches", "loopErrorDegrees"]
 INFO += [s + k for s in SIDES for k in ("FlywheelEncoderOpposite", "TopVelocity", "FlywheelThrowsOut", "ShotPoints")]
 MAX_POINTS = 16
 WATCHED = ["team-config.yaml", set_tuning.CODE_FLAGS["Intake.REVERSED"][0], set_tuning.CODE_FLAGS["Launcher.FRONT_REVERSED"][0],
-           "tools/codegen/Constants.java.tpl"]
+           set_tuning.CODE_FLAGS["Ramp.RAMP_REVERSED"][0], "tools/codegen/Constants.java.tpl"]
 
 
 def newest(path):
@@ -72,15 +67,20 @@ def newest(path):
 
 
 def points(path):
-    """Saved shot table points, in file order, minus the ones a later '# removed <distance>' line cancels.
-    Other '#' lines (session starts, check shots) are not points."""
+    """Saved shot table points [distance, speed, feed], in file order, minus the ones a later '# removed <distance>' line
+    cancels. Other '#' lines (session starts, check shots) are not points. The header and '# columns' lines say where the
+    feed is: files from before 2026-10-17 have a hood column (no hood on this robot), skipped."""
     pts = []
     if not os.path.isfile(path):
         return pts
+    feed = 2
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith("distance_in"):
+            if line.startswith("distance_in") or line.startswith("# columns "):
+                feed = line.replace("# columns ", "").split(",").index("feed")
+                continue
+            if not line:
                 continue
             if line.startswith("# removed"):
                 d = float(line.split()[-1])
@@ -93,7 +93,7 @@ def points(path):
             if line.startswith("#"):
                 continue
             c = line.split(",")
-            pts.append([float(c[0]), float(c[1]), float(c[2]), float(c[3])])
+            pts.append([float(c[0]), float(c[1]), float(c[feed])])
     return pts
 
 
@@ -156,8 +156,8 @@ def plan(outbox, sandbox=None):
             if v is None:
                 p["notes"].append(f"{key} = {value}: not a number, not entered ({prog} did not finish it)")
             elif key in TRIMS and abs(v) > MAX_TRIM_DEG:
-                p["notes"].append(f"{key} = {value}: over {MAX_TRIM_DEG} deg, not entered. The turret was zeroed while turned; "
-                                  f"zero it straight forward (cross in INIT) and run {prog} again.")
+                p["notes"].append(f"{key} = {value}: over {MAX_TRIM_DEG} deg, not entered. Program 3's straight-forward position for this "
+                                  f"turret is off: redo program 3, then {prog}.")
             else:
                 p["values"][key] = v
         elif key in INFO:
@@ -193,8 +193,8 @@ def plan(outbox, sandbox=None):
         if len(pts) > MAX_POINTS:
             p["notes"].append(f"{s} shot table: {len(pts)} points, the code holds {MAX_POINTS}. Only the first {MAX_POINTS} by distance are entered.")
             pts = pts[:MAX_POINTS]
-        for i, (d, speed, hood, feed) in enumerate(pts, 1):
-            for name, v in (("Distance", d), ("Speed", speed), ("Hood", hood), ("Feed", feed)):
+        for i, (d, speed, feed) in enumerate(pts, 1):
+            for name, v in (("Distance", d), ("Speed", speed), ("Feed", feed)):
                 p["values"][f"{s}Shot{i:02d}{name}"] = v
         p["shots"][s] = len(pts)
         if sandbox:
@@ -202,7 +202,7 @@ def plan(outbox, sandbox=None):
                      if v is not None and re.fullmatch(rf"{s}Shot(\d\d)Distance", k) and int(k[len(s) + 4:len(s) + 6]) > len(pts)]
             if stale:
                 for k in stale:
-                    for name in ("Distance", "Speed", "Hood", "Feed"):
+                    for name in ("Distance", "Speed", "Feed"):
                         p["values"][k[:-len("Distance")] + name] = None
                 p["notes"].append(f"{s} shot table: {', '.join(sorted(stale))} held points from an older, longer table. "
                                   f"They are cleared (value: null) so the robot does not use them.")

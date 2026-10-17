@@ -1,0 +1,8 @@
+{
+  "name": "C. Ramp servo mounted the wrong way",
+  "description": "The right ramp servo was mounted the same way round as the left one, not mirrored. The code drives the two opposite ways (as mirrored servos need), so they fight: both buzz and the ramp hardly moves. Program 2's ramp step shows it: hold R2 and nothing goes out. Turn the servo round on its mount (Servos tab).",
+  "ramp": {"left": {"dir": 1}, "right": {"dir": 1}},
+  "faults": [
+    {"type": "rampServoNotMirrored", "text": "The right ramp servo is mounted the same way as the left: the two turn against each other.", "caughtBy": "2 Motor Directions, step 5 (ramp): it buzzes and does not move; turn the right servo round"}
+  ]
+}

@@ -1,4 +1,4 @@
-"""Run one OpMode of an auto in the simulator on a fully tuned robot (shot tables and ramp positions set), load one
+"""Run one OpMode of an auto in the simulator on a fully tuned robot (shot tables and ramp times set), load one
 element per launcher at every shot, and print the status line each time it changes and where each shot landed.   python3 run_auto.py Blue Blue_MyAuto 81 9.5 90   (alliance, OpMode, blue start x y heading)
 Not part of run_all.sh."""
 import re, time, sys
@@ -11,8 +11,6 @@ def run(alliance, name, start, seed):
         s.preset_config()
         values = tuned_robot(s)
         exp, gd = expected(s), guide(s)
-        for k in ("rampStowed", "rampDeployed"):
-            values[k] = round(float(pick(exp, gd, k)), 4)
         dist = (30, 40, 50, 60, 70, 80, 90, 100, 110)
         values.update(shot_table(s, 0, dist)); values.update(shot_table(s, 1, dist))
         s.set_values(values)

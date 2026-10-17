@@ -2,7 +2,7 @@
 team-config.yaml entries get the value with origin: measured; the few settings that are code, not YAML
 (motor/pod directions, reversed flags) are edited in place. Then render.sh regenerates the Java files.
 
-usage: set_tuning.py <sandbox-root> '{"yawKs": 0.08, "Intake.REVERSED": true, "frontLeftDirection": "REVERSE"}'
+usage: set_tuning.py <sandbox-root> '{"frontYawForward": 0.52, "Intake.REVERSED": true, "frontLeftDirection": "REVERSE"}'
 """
 import json
 import re
@@ -12,8 +12,10 @@ import sys
 TC = "TeamCode/src/main/java/org/firstinspires/ftc/teamcode"
 CODE_FLAGS = {
     "Intake.REVERSED": (f"{TC}/subsystems/Intake.java", r"(public static boolean REVERSED = )(true|false);"),
+    "Intake.POLLEN_REVERSED": (f"{TC}/subsystems/Intake.java", r"(public static boolean POLLEN_REVERSED = )(true|false);"),
     "Launcher.FRONT_REVERSED": (f"{TC}/subsystems/Launcher.java", r"(public static boolean FRONT_REVERSED = )(true|false);"),
     "Launcher.BACK_REVERSED": (f"{TC}/subsystems/Launcher.java", r"(public static boolean BACK_REVERSED = )(true|false);"),
+    "Ramp.RAMP_REVERSED": (f"{TC}/subsystems/Ramp.java", r"(public static boolean RAMP_REVERSED = )(true|false);"),
 }
 DIRECTIONS = {
     "frontLeftDirection": "DcMotorSimple.Direction", "backLeftDirection": "DcMotorSimple.Direction",

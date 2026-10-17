@@ -23,13 +23,15 @@ def pick(exp, gd, key):
 
 def directions(exp):
     return {"Intake.REVERSED": exp["intakeReversed"] == 1,
+            "Intake.POLLEN_REVERSED": exp["pollenFeedReversed"] == 1,
             "Launcher.FRONT_REVERSED": exp["frontFlywheelReversed"] == 1,
-            "Launcher.BACK_REVERSED": exp["backFlywheelReversed"] == 1}
+            "Launcher.BACK_REVERSED": exp["backFlywheelReversed"] == 1,
+            "Ramp.RAMP_REVERSED": exp["rampReversed"] == 1}
 
 
 def servo_values(exp, gd):
-    keys = ["frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS",
-            "frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax"]
+    keys = ["frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "backGate2Closed", "backGate2Open", "gateTravelS",
+            "rampOutS", "rampInS"]
     return {k: round(float(pick(exp, gd, k)), 4) for k in keys}
 
 
@@ -47,18 +49,9 @@ def flywheel_values(exp, volts=None):
 
 
 def yaw_values(s, exp):
-    """Yaw Tuner results. The turret's own expected() when it has them, else worked out from the turret truth:
-    the SDK flips a goBILDA motor's power and encoder together, so +power counts up while the turret turns CW."""
-    keys = ["yawTicksPerDegFront", "yawTicksPerDegBack", "yawMinDeg", "yawMaxDeg", "yawKs", "yawKv", "yawPowerSign",
-            "yawTuningVoltage", "yawKp"]
-    if all(k in exp for k in keys):
-        # gear play (E-6) and, on a robot with the index switch, where it turns on
-        return {k: exp[k] for k in keys + ["yawPlayDeg", "yawIndexDeg"] if k in exp}
-    t = s.get("truth")
-    per_deg = -383.6 * t.get("turret.motorTurnsPerFrontTurn", 5.0) * t.get("turret.motorSign", 1.0) / 360
-    return {"yawTicksPerDegFront": round(per_deg, 4), "yawTicksPerDegBack": round(per_deg / t.get("turret.backRatio", 1.0), 4),
-            "yawMinDeg": t.get("turret.stopMinDeg", -175) + 5, "yawMaxDeg": t.get("turret.stopMaxDeg", 175) - 5,
-            "yawKs": 0.06, "yawKv": 0.0019, "yawPowerSign": 1 if per_deg > 0 else -1, "yawTuningVoltage": 12.5, "yawKp": 8}
+    """Program 3's results (turret servos): the turret's own expected()."""
+    keys = [side + k for side in SIDES for k in ("YawForward", "YawPerDeg", "YawMinDeg", "YawMaxDeg")] + ["yawDegPerS"]
+    return {k: round(exp[k], 6) for k in keys}
 
 
 def geometry_values(exp, gd):
@@ -106,16 +99,16 @@ def start_corner(s, values):
 
 
 def straighten_turrets(s, tol=0.3, timeout=20):
-    """By hand, turns the turrets straight forward (the sim starts them up to 6 deg off), then lets go: what the screen
-    asks before cross zeroes them."""
+    """By hand, turns each turret whose servo has no signal yet straight forward (the sim starts them up to 6 deg
+    off), as the INIT screens ask. A powered servo holds its turret: nothing to do."""
     end = time.time() + timeout
-    while time.time() < end:
-        err = -s.world()["turret"]["frontDeg"]
-        if abs(err) < tol:
-            break
-        s.hand("turret", "turn", deg=max(-5, min(5, err)))
-        time.sleep(0.2)
-    s.hand("turret", "release")
+    for back in (False, True):
+        while time.time() < end:
+            t = s.world()["turret"]["back" if back else "front"]
+            if t["powered"] or abs(t["deg"]) < tol:
+                break
+            s.hand("turret", "turn", deg=max(-5, min(5, -t["deg"])), back=back)
+            time.sleep(0.2)
     time.sleep(0.3)
     return s.world()["turret"]
 

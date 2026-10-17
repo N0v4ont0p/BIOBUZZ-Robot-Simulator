@@ -1,0 +1,11 @@
+{
+  "name": "C. Turret: slow back servo",
+  "description": "The back turret's servo is a slow high-torque model and the turret is heavy: it swings much slower than the front one. Program 3's turn speed has to come from the slower (back) turret, or the code counts it as on target before it gets there.",
+  "config": "preset",
+  "faults": [
+    {"type": "slowTurret", "part": "yaw.back", "text": "The back turret swings much slower than the front one.", "caughtBy": "3 Turret Servos, last step (turret turn speed from the slower turret)"}
+  ],
+  "turret": {
+    "backSpeedS60": {"min": 0.28, "max": 0.32}
+  }
+}

@@ -1,3 +1,5 @@
+Superseded 2026-10-17: see docs/HARDWARE_UPDATE_PLAN.md
+
 # Smooth shot curve — PLAN (not built)
 
 Goal: the speed and hood the robot uses at any distance are as close as possible to the middle of the "it scores"

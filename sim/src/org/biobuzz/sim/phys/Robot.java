@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 // The whole hidden robot: battery, hubs with their cables, and every mechanism. Part ids (physical, not the
-// configuration names): drive.leftFront/leftBack/rightFront/rightBack, intake, yaw, flywheel.front/back (motors);
-// hood.front/back, ramp, gate.front/back (servos); pinpoint (I2C).
+// configuration names): drive.leftFront/leftBack/rightFront/rightBack, intake, pollenFeed, flywheel.front/back
+// (motors); ramp.left/right (continuous), gate.front/back/back2, yaw.front/back (servos); pinpoint (I2C). No hood.
 public final class Robot {
     public final Truth truth;
     public final Battery battery;
@@ -35,9 +35,9 @@ public final class Robot {
     public final Shots shots;
 
     public static final String[] DEFAULT_CH_MOTORS = {"drive.leftFront", "drive.leftBack", "drive.rightFront", "drive.rightBack"};
-    public static final String[] DEFAULT_EH_MOTORS = {"intake", "yaw", "flywheel.front", "flywheel.back"};
-    public static final String[] DEFAULT_CH_SERVOS = {"hood.front", "hood.back", "ramp", "gate.front", "gate.back", null};
-    public static final String[] DEFAULT_EH_SERVOS = {null, null, null, null, null, null};
+    public static final String[] DEFAULT_EH_MOTORS = {"intake", "pollenFeed", "flywheel.front", "flywheel.back"};
+    public static final String[] DEFAULT_CH_SERVOS = {"ramp.left", "ramp.right", "gate.front", "gate.back", "gate.back2", "yaw.front"};
+    public static final String[] DEFAULT_EH_SERVOS = {"yaw.back", null, null, null, null, null};
 
     public Robot(Truth t) {
         truth = t;
@@ -47,6 +47,7 @@ public final class Robot {
         turret = add(new Turret(this, t));
         flywheels = add(new Flywheels(this, t));
         servoMechs = add(new ServoMechs(this, t));
+        turret.film(servoMechs.camera);
         pinpoint = add(new Pinpoint(this, t));
         shots = add(new Shots(this, t));
         onBox = t.bool("robot.startsOnBox", true);
@@ -58,8 +59,6 @@ public final class Robot {
         wire(controlHub, "wiring.controlHub", DEFAULT_CH_MOTORS, DEFAULT_CH_SERVOS);
         wire(expansionHub, "wiring.expansionHub", DEFAULT_EH_MOTORS, DEFAULT_EH_SERVOS);
         controlHub.i2c[(int) t.num("wiring.pinpointBus", 1)] = "pinpoint";
-        // optional: a magnetic limit switch that sees a magnet on the front turret at forward (only if the robot has one)
-        if (t.bool("turret.indexSensor", false)) controlHub.digital[(int) t.num("wiring.yawIndexPort", 0)] = "yawIndex";
         applyWiringFaults(t);
     }
 

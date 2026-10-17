@@ -1,9 +1,8 @@
 {
   "name": "E. Human error",
-  "description": "The robot is fine, but the people are rushing: the battery on the robot is nearly flat, and the turrets were left a little crooked. Read every screen before you press a button.",
+  "description": "The robot is fine, but the people are rushing: the battery on the robot is nearly flat. Read every screen before you press a button.",
   "config": "preset",
   "faults": [
-    {"type": "lowBattery", "set": {"battery.charge": 0.35}},
-    {"type": "turretNotForward", "set": {"turret.startDeg": 12}}
+    {"type": "lowBattery", "set": {"battery.charge": 0.35}}
   ]
 }

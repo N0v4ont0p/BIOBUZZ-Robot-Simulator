@@ -20,14 +20,14 @@ def run(s):
     s.scenario("B2-wrong-names.json", seed=1)
     assert s.state()["sim"]["activeConfig"] == "BIOBUZZ"
     cfg = json.dumps(s.get("config/get?name=BIOBUZZ"))
-    assert '"yaw"' in cfg and '"bpannel"' in cfg and '"lt"' not in cfg, cfg
+    assert '"pollen"' in cfg and '"bgate2"' in cfg and '"pfeed"' not in cfg, cfg
     f = faults(s)
-    assert len(f) == 2 and all(x.get("caught") is False for x in f) and '"lt"' in f[0]["text"], f
+    assert len(f) == 2 and all(x.get("caught") is False for x in f) and '"pfeed"' in f[0]["text"], f
 
     s.scenario("E-human-error.json", seed=1)
     truth = s.get("truth")
-    assert truth["turret.startDeg"] == 12 and truth["battery.charge"] == 0.35, truth
-    assert [x.get("caught") for x in faults(s)] == [False, None]
+    assert truth["battery.charge"] == 0.35, truth
+    assert [x.get("caught") for x in faults(s)] == [False]
 
     picks = []
     for seed in (1, 1, 2, 3):

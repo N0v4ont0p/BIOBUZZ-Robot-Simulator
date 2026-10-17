@@ -55,7 +55,7 @@ Bench.register({
         <p class="hint"><b>Backup:</b> each program also ends with a RESULTS block on the Driver Station. "Take the photo" copies it off the
           screen (or type it in the box, one <code>key = value</code> per line under <code>RESULTS P3</code>).</p>
         <div class="controls"><button class="btn secondary" id="lpPhoto">Take the photo</button>
-          <textarea id="lpPaste" rows="3" cols="34" placeholder="RESULTS P3&#10;yawKs = 0.08&#10;..."></textarea>
+          <textarea id="lpPaste" rows="3" cols="34" placeholder="RESULTS P3&#10;frontYawForward = 0.512&#10;..."></textarea>
           <button class="btn secondary" id="lpPasteGo">Send typed results</button></div>
       </section>
 

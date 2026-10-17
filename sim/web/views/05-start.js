@@ -4,15 +4,15 @@ const START_PEDRO = ['xPodOffset', 'yPodOffset', 'maxAchievableForwardVelocity',
   'naturalStrafeDeceleration', 'headingBrakingLinearCoefficient', 'headingBrakingQuadraticCoefficient', 'headingKP',
   'forwardBrakingLinearCoefficient', 'forwardBrakingQuadraticCoefficient', 'strafeBrakingLinearCoefficient', 'strafeBrakingQuadraticCoefficient',
   'forwardTranslationalPrimaryKP', 'forwardTranslationalSecondaryKP', 'strafeTranslationalPrimaryKP', 'strafeTranslationalSecondaryKP', 'coastKV', 'brakeKV'];
-const START_PROGRAMS = ['1 Check Devices', '2 Motor Directions', '3 Yaw Tuner', '4 Servo Positions', '5 Drive Tuning', '6 Position Check',
-  '7 Flywheel Tuner', '8 Front Shot Tuner', '9 Back Shot Tuner'];
+const START_PROGRAMS = ['1 Check Devices', '2 Motor Directions', '3 Turret Servos', '4 Servo Positions', '5 Drive Tuning', '6 Position Check',
+  '7 Flywheel Tuner', '8 Back Shot Tuner', '9 Front Shot Tuner'];
 
 // Every setup program uses the numbers the earlier ones saved on the robot (the yellow "from the robot's results
 // file" line on the Driver Station), so the whole setup needs one build at the start and one at the end.
 const START_STEPS = [
   {session: 'Session 0, at the desk'},
   {title: 'Configure Robot (D-1)', tabs: ['wiring'],
-    text: 'Driver Station menu (&#8942;) &rarr; Configure Robot. Give every port its name from the setup guide (lf, lb, rf, rb, intake, lt, fs, bs, fpanel, bpanel, ramp, fg, bg, pp). Follow the cables on the Wiring tab. Save, then activate.',
+    text: 'Driver Station menu (&#8942;) &rarr; Configure Robot. Give every port its name from the setup guide (lf, lb, rf, rb, intake, pfeed, fs, bs, rampl, rampr as Continuous Rotation Servo, fg, bg, bg2, fyaw, byaw, pp). Follow the cables on the Wiring tab. Save, then activate.',
     done: c => !!c.s.sim.activeConfig},
   {title: 'CAD sheet in the code: build 1 of 2 (C-1, C-2, H-1)', tabs: ['field'], text: 'Field tab: "Enter the CAD sheet in the code" (robot edge sizes, turret pivots, CELL positions). That installs the first build. No more builds until the end.',
     done: c => ['centerToFront', 'centerToBack', 'centerToLeft', 'centerToRight'].every(k => c.st.yaml[k] != null)},
@@ -21,9 +21,9 @@ const START_STEPS = [
     done: c => c.ran(START_PROGRAMS[0])},
   {title: 'Program 2: Motor Directions', tabs: ['robot'], text: 'It loads by itself when you STOP program 1. Hold R2, watch the part, answer cross (yes) or circle (no).',
     done: c => c.ran(START_PROGRAMS[1])},
-  {title: 'Program 3: Yaw Tuner', tabs: ['turret', 'robot'], text: 'Loads after program 2. Point both turrets straight forward BEFORE INIT (the turn buttons on the Turret tab help). Part A by hand, then it moves by itself, ending with the homing test (cross to start): the turrets are driven into their stops.',
+  {title: 'Program 3: Turret Servos', tabs: ['turret', 'robot'], text: 'Loads after program 2. For each turret: press square, nudge the servo with R1/L1, R2/L2 until the barrel points straight forward (cross), straight left, straight right (a straightedge on the Turret tab helps), then as far left and right as the cable allows. Then film both turrets swinging and count the frames of the slower one.',
     done: c => c.ran(START_PROGRAMS[2])},
-  {title: 'Program 4: Servo Positions', tabs: ['servos', 'robot'], text: 'Press square to move each servo, nudge it with R1/L1, R2/L2, save with cross. Count the gate frames, then the ramp frames, in slow motion.',
+  {title: 'Program 4: Servo Positions', tabs: ['servos', 'robot'], text: 'Press square to move each gate servo, nudge it with R1/L1, R2/L2, save with cross (the back gate: servo 1 alone, then servo 2 until it stops buzzing). Count the gate frames in slow motion. Ramp: hold square to run it out and in and count the frames.',
     done: c => c.ran(START_PROGRAMS[3])},
   {session: 'Session B, robot on the floor: programs 5 to 7'},
   {title: 'Program 5: Drive Tuning (Pedro, on the Driver Station)', tabs: ['field', 'robot'], text: 'Loads after program 4. A list of 4 parts: 1 wheel directions (robot on blocks), 2 Pinpoint (on the floor, you push it), 3 Foresight (it drives itself), 4 Tests. dpad picks, cross runs. Each part saves its numbers on the robot; the next uses them.',
@@ -32,13 +32,13 @@ const START_STEPS = [
     done: c => c.ran(START_PROGRAMS[5])},
   {title: 'Program 7: Flywheel Tuner', tabs: ['flywheels', 'robot'], text: 'Nothing loaded, hands clear. Load ONE element only when step 3 asks.', done: c => c.ran(START_PROGRAMS[6])},
   {session: 'Session C, on the field: programs 8 and 9, then the final build'},
-  {title: 'Programs 8 and 9: Shot Tuners', tabs: ['field', 'robot'], text: 'Start corner, options, both turrets straight forward + cross (turret zero), START: the robot drives itself to each spot. L2 load, R2 fire, cross in / triangle not in, square/circle speed, dpad hood and yaw trim. 4 in a row saves the point and it drives to the next. 10+ points per launcher. Film a few shots in slow motion for G-6.',
+  {title: 'Programs 8 and 9: Shot Tuners (back first)', tabs: ['field', 'robot'], text: 'Start corner, options, START: the robot drives itself to each spot. L2 load, R2 fire, cross in / triangle not in, square/circle speed, dpad left/right yaw trim (no hood: the launch angle is fixed). 4 in a row saves the point and it drives to the next. 10+ points for the back (POLLEN) launcher, 6+ for the front. Film a few shots in slow motion for G-6.',
     done: c => c.ran(START_PROGRAMS[7]) && c.ran(START_PROGRAMS[8])},
   {title: 'Copy everything off the robot (adb pull, USB cable)', tabs: ['results'], send: true, text: 'Send results tab: Copy results. One copy holds every program\'s results and both points files.',
     done: c => c.pulled(START_PROGRAMS)},
   {title: 'Enter everything: build 2 of 2', tabs: ['results'], send: true, text: 'Coach mode enters the numbers and installs the final build. Now they are in the code: the yellow "from the robot\'s results file" line is gone.',
     done: c => c.sent(START_PROGRAMS)},
-  {title: 'BIOBUZZ TeleOp', tabs: ['field', 'robot'], text: 'INIT (red start corner by default; square = blue), if it says TURRET NOT ZEROED: options in the start corner (the turret homes after START while you drive) or both turrets forward + cross, START. L1 launchers, hold R1 fire; the turrets lock on by themselves. Same buttons as DECODE; L1 = fire mode on/off, options = corner reseed, triangle = ramp.', done: c => c.teleop},
+  {title: 'BIOBUZZ TeleOp', tabs: ['field', 'robot'], text: 'INIT (red start corner by default; square = blue), START. L1 launchers, hold R1 fire; the turrets lock on by themselves. Same buttons as DECODE; L1 = fire mode on/off, options = corner reseed, triangle = ramp.', done: c => c.teleop},
   {title: 'Report card', tabs: ['report'], text: 'See how close your numbers came to the hidden robot, and which faults you caught.', done: () => false},
 ];
 

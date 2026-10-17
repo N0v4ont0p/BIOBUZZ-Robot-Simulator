@@ -2,97 +2,60 @@ package org.biobuzz.sim.phys;
 
 import com.google.gson.JsonObject;
 
-import org.biobuzz.sim.hw.Hub;
-import org.biobuzz.sim.hw.MotorPort;
 import org.biobuzz.sim.truth.Truth;
-import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.SplittableRandom;
 
-// One yaw motor geared to both turrets. Three bodies: the drive side (motor, gearbox, pinions; angle in front-turret
-// radians), the front turret and the back turret (each in its own radians, 0 = barrel straight forward, CCW +).
-// Each turret meshes with the drive side through a gear with play (backlash); the back pinion turns backRatio times
-// the front one. Hard stops and the cable act on the front turret. The yaw encoder is on the motor, so the robot code
-// only ever sees the drive side.
+// Two turrets, one yaw servo each (team 2026-10-17; the part is not chosen yet, so a position servo like the gates:
+// ServoModel). Each servo turns its turret through a gear: turret degrees = gain x horn degrees, and which way depends
+// on how it is mounted (dir). Turret angle ("out"): 0 = barrel straight forward, + = left. The horn sits on the spline
+// a little off (refDeg), so straight forward is not exactly the servo's middle. Each turret has a hard stop each way
+// and a cable that pulls tight somewhere before it; turned past the tight point the cable stretches and is damaged.
+// Without a signal the servo is limp and the turret turns by hand.
 public class Turret implements Part {
-    private static final double MESH_STIFFNESS = 2000, MESH_DAMPING = 2;  // N*m/rad, N*m per rad/s
-    private static final double HAND_STIFFNESS = 60, HAND_DAMPING = 1.5, HAND_MAX = 8;
-    private static final double WIGGLE_HZ = 2.5, LIMIT_MARGIN_DEG = 10;
-    private static final int SUBSTEPS = 4;
-    // what the robot code adds to the reaction time it measures: ~2 loops at ~9 ms (hub calls) plus its speed filter
-    private static final double SENSE_DELAY_S = 0.035;
+    public static final String[] IDS = {"yaw.front", "yaw.back"};
+    // program 3 keeps the limits this far inside the far ends
+    public static final double LIMIT_MARGIN_DEG = 5;
 
-    public final Motor motor;
-    public final double gear;        // motor output turns per front turret turn, sign = mesh direction
-    public final double backRatio;   // back turret turns per front turret turn, sign = same / opposite way
-    final Body drive = new Body(), front = new Body(), back = new Body();
-    final double playFront, playBack;
-    final double stopMax, stopMin, cableStretch, cableStiffness;
-    double cableTightMax, cableTightMin;
-    // a snag (scenario G-turret-snag): within SNAG_HALF_DEG of snagDeg the front turret is held while it is pushed left
-    // with less than snagTorque (a cable that catches when turning left; turning right frees it); NaN = none
-    final double snag, snagTorque;
-    private static final double SNAG_HALF_DEG = 0.6;
-    boolean cableDamaged;
-    String contact;                  // "left" / "right" when pressed against a stop or the end of the cable
-    // optional magnetic switch at forward (Robot wires it to a digital port): the magnet on the front turret is
-    // mounted a little off true forward, and the switch sees it over a band either side
-    final boolean hasIndex;
-    final double indexDeg, indexHalfWidthDeg;
-
-    private Body handBody;
-    private double handTarget, wiggleLeft, wiggleT;
-    private Body wiggleBody;
-    private double voltSum, voltTime;
+    public final ServoModel[] servos = new ServoModel[2];
+    final double[] stopMax = new double[2], stopMin = new double[2];
+    final double[] cableTightMax = new double[2], cableTightMin = new double[2];
+    final double cableStretch;
+    final boolean[] cableDamaged = new boolean[2];
+    final String[] contact = new String[2];
 
     public Turret(Robot r, Truth t) {
-        motor = new Motor("yaw", MotorSpec.of(t.str("turret.motor", "435")));
-        r.addMotor(motor);
-        t.random().nextLong();   // java.util.Random's first number hardly changes between nearby seeds
-        double turns = pick(t, "motorTurnsPerFrontTurn", 4.2, 6.0);
-        gear = turns * Math.signum(t.num("turret.motorSign", t.random().nextDouble() < 0.5 ? 1 : -1));
-        backRatio = pick(t, "backRatio", 0.9, 1.15);
-        playFront = Math.toRadians(pick(t, "playFrontDeg", 0.3, 0.9));
-        playBack = Math.toRadians(pick(t, "playBackDeg", 0.3, 0.9));
-        stopMax = Math.toRadians(pick(t, "stopMaxDeg", 150, 175));
-        stopMin = Math.toRadians(pick(t, "stopMinDeg", -175, -150));
-        cableTightMax = Math.toRadians(pick(t, "cableTightMaxDeg", 185, 210));
-        cableTightMin = Math.toRadians(pick(t, "cableTightMinDeg", -210, -185));
-        cableStretch = Math.toRadians(t.num("turret.cableStretchDeg", 20));
-        cableStiffness = t.num("turret.cableStiffness", 3.0);
-        snag = Math.toRadians(t.num("turret.snagDeg", Double.NaN));
-        snagTorque = t.num("turret.snagTorque", 1.0);
-        hasIndex = t.bool("turret.indexSensor", false);
-        indexDeg = t.range("turret.indexDeg", -1.5, 1.5);
-        indexHalfWidthDeg = t.range("turret.indexHalfWidthDeg", 1.5, 2.5);
-
-        double fs = pick(t, "staticFriction", 0.03, 0.08);   // each turret's bearing and cable drag, N*m
-        double fk = t.num("turret.kineticFriction", 0.75 * fs);
-        double bias = pick(t, "frictionBias", -0.15, 0.15);  // extra fraction when turning left (CCW)
-        double visc = pick(t, "viscous", 0.01, 0.03);
-        front.inertia = pick(t, "frontInertia", 0.006, 0.012);
-        back.inertia = pick(t, "backInertia", 0.006, 0.012);
-        for (Body b : new Body[]{front, back}) {
-            b.staticPos = fs * (1 + bias);
-            b.staticNeg = fs * (1 - bias);
-            b.kineticPos = fk * (1 + bias);
-            b.kineticNeg = fk * (1 - bias);
-            b.viscous = visc;
+        Random rng = new Random(new SplittableRandom(t.seed * 31 + 7).nextLong());
+        cableStretch = t.num("turret.cableStretchDeg", 20);
+        for (int i = 0; i < 2; i++) {
+            String p = i == 0 ? "turret.front" : "turret.back";
+            stopMax[i] = pick(t, rng, p + "StopMaxDeg", "turret.stopMaxDeg", 150, 170);
+            stopMin[i] = pick(t, rng, p + "StopMinDeg", "turret.stopMinDeg", -170, -150);
+            cableTightMax[i] = pick(t, rng, p + "CableTightMaxDeg", i == 0 ? "turret.cableTightMaxDeg" : null, 175, 200);
+            cableTightMin[i] = pick(t, rng, p + "CableTightMinDeg", null, -200, -175);
+            // CAD v1 gear trains: front 3 x 36/95 = 1.137, back 3 x 25/68 = 1.103 turret deg per servo deg
+            double gain = i == 0 ? pick(t, rng, p + "Gain", null, 1.12, 1.15) : pick(t, rng, p + "Gain", null, 1.09, 1.12);
+            double dir = t.num(p + "Dir", rng.nextBoolean() ? 1 : -1);
+            double ref = pick(t, rng, p + "RefDeg", null, -8, 8);
+            // goBILDA / Axon class servo under a turret's load, horn seconds per 60 deg
+            double speed = pick(t, rng, p + "SpeedS60", "turret.speedS60", 0.11, 0.14);
+            servos[i] = new ServoModel(IDS[i], t, rng, speed, dir, gain, ref, stopMin[i], stopMax[i], t.num("turret.startDeg", rng.nextDouble() * 12 - 6));
+            r.addServo(servos[i]);
         }
-        double g = motor.frictionTorque() * Math.abs(gear);
-        drive.kineticPos = drive.kineticNeg = g;
-        drive.staticPos = drive.staticNeg = 1.3 * g;
-        drive.inertia = motor.reflectedInertia() * gear * gear + t.num("turret.driveInertia", 0.002);
-
-        front.angle = Math.toRadians(pick(t, "startDeg", -6, 6));
-        drive.angle = front.angle + (t.random().nextDouble() - 0.5) * playFront;
-        back.angle = backRatio * drive.angle + (t.random().nextDouble() - 0.5) * playBack;
-        syncMotor();
     }
 
-    private static double pick(Truth t, String key, double lo, double hi) {
-        return t.num("turret." + key, lo + t.random().nextDouble() * (hi - lo));
+    // scenario value for this turret, else one for both turrets, else random in [lo, hi]
+    private static double pick(Truth t, Random rng, String own, String both, double lo, double hi) {
+        double v = lo + rng.nextDouble() * (hi - lo);
+        return t.num(own, both == null ? v : t.num(both, v));
+    }
+
+    // the slow-motion camera films both turrets (program 3 times their swing)
+    public void film(SlowMoCamera camera) {
+        for (ServoModel s : servos) camera.addChannel(s.id, s::out);
     }
 
     @Override
@@ -101,104 +64,49 @@ public class Turret implements Part {
     }
 
     public double frontDeg() {
-        return Math.toDegrees(front.angle);
+        return servos[0].out();
     }
 
     public double backDeg() {
-        return Math.toDegrees(back.angle);
+        return servos[1].out();
     }
 
     @Override
     public void step(double dt, World w) {
-        double volts = w.robot.battery.volts;
-        double h = dt / SUBSTEPS;
-        for (int i = 0; i < SUBSTEPS; i++) substep(h, volts);
-        if (motor.driven && motor.duty != 0) {
-            voltSum += volts * dt;
-            voltTime += dt;
-        }
-        if (wiggleLeft > 0) {
-            wiggleLeft -= dt;
-            wiggleT += dt;
-            if (wiggleLeft <= 0) wiggleBody = null;
+        for (int i = 0; i < 2; i++) {
+            ServoModel s = servos[i];
+            // a cable pulled past its slack holds the turret like a stop (and is damaged)
+            s.outMin = Math.max(s.outStopLow, cableTightMin[i] - cableStretch);
+            s.outMax = Math.min(s.outStopHigh, cableTightMax[i] + cableStretch);
+            s.step(dt, w.time, w.robot.battery);
+            double a = s.out();
+            contact[i] = a >= s.outMax - 1e-6 ? "left" : a <= s.outMin + 1e-6 ? "right" : null;
+            if (a > cableTightMax[i] + 1 || a < cableTightMin[i] - 1) cableDamaged[i] = true;
         }
     }
 
-    private void substep(double h, double volts) {
-        syncMotor();
-        double onDrive = motor.torque(volts) * gear;
-        double cf = mesh(front.angle - drive.angle, front.rate - drive.rate, playFront);
-        double cb = mesh(back.angle - backRatio * drive.angle, back.rate - backRatio * drive.rate, playBack);
-        onDrive -= cf + backRatio * cb;
-        double onFront = cf + cable() + hand(front), onBack = cb + hand(back);
-        if (wiggleBody != null) {
-            double push = (wiggleBody.staticPos + 0.4) * Math.signum(Math.sin(2 * Math.PI * WIGGLE_HZ * wiggleT));
-            if (wiggleBody == front) onFront += push;
-            else onBack += push;
-            drive.rate = 0;   // E-6: the yaw motor is held still
-        } else {
-            drive.step(onDrive, h);
-        }
-        double frontBefore = front.angle;
-        front.step(onFront, h);
-        // it catches only while the turret is pushed left into it (backing off right is free, like a cable that catches)
-        if (!Double.isNaN(snag) && Math.abs(frontBefore - snag) < Math.toRadians(SNAG_HALF_DEG) && onFront > 0 && onFront < snagTorque) {
-            front.angle = frontBefore;
-            front.rate = 0;
-        }
-        back.step(onBack, h);
-        stops();
-        syncMotor();
+    // where the turret can really get to: the hard stop, the tight cable, or the end of the servo's range
+    double leftLimit(int i) {
+        return Math.min(Math.min(stopMax[i], cableTightMax[i]), servoEnd(i, true));
     }
 
-    // the magnetic switch sees the magnet (its digital input reads false)
-    public boolean indexActive() {
-        return hasIndex && Math.abs(Math.toDegrees(front.angle) - indexDeg) <= indexHalfWidthDeg;
+    double rightLimit(int i) {
+        return Math.max(Math.max(stopMin[i], cableTightMin[i]), servoEnd(i, false));
     }
 
-    // torque on the turret from its mesh; d = turret angle minus where the pinion holds it
-    private static double mesh(double d, double rate, double play) {
-        double half = play / 2;
-        if (d > half) return Math.min(0, -MESH_STIFFNESS * (d - half) - MESH_DAMPING * rate);
-        if (d < -half) return Math.max(0, -MESH_STIFFNESS * (d + half) - MESH_DAMPING * rate);
-        return 0;
+    // the turret angle at servo position 0 or 1 (the SDK's default 600-2400 us), whichever is that way
+    private double servoEnd(int i, boolean left) {
+        ServoModel s = servos[i];
+        double a = s.outOf(hornAt(s, 600)), b = s.outOf(hornAt(s, 2400));
+        return left ? Math.max(a, b) : Math.min(a, b);
     }
 
-    private double cable() {
-        if (front.angle > cableTightMax) return -cableStiffness * (front.angle - cableTightMax);
-        if (front.angle < cableTightMin) return -cableStiffness * (front.angle - cableTightMin);
-        return 0;
+    private static double hornAt(ServoModel s, double us) {
+        return (us - 1500) * s.degPerUs + s.offsetDeg;
     }
 
-    private double hand(Body b) {
-        if (handBody != b) return 0;
-        double t = HAND_STIFFNESS * (handTarget - b.angle) - HAND_DAMPING * b.rate;
-        return Math.max(-HAND_MAX, Math.min(HAND_MAX, t));
-    }
-
-    private void stops() {
-        double hi = Math.min(stopMax, cableTightMax + cableStretch), lo = Math.max(stopMin, cableTightMin - cableStretch);
-        contact = null;
-        if (front.angle >= hi) {
-            front.angle = hi;
-            front.rate = Math.min(0, front.rate);
-            contact = "left";
-            if (hi < stopMax) cableDamaged = true;
-        } else if (front.angle <= lo) {
-            front.angle = lo;
-            front.rate = Math.max(0, front.rate);
-            contact = "right";
-            if (lo > stopMin) cableDamaged = true;
-        }
-    }
-
-    private void syncMotor() {
-        motor.outAngle = drive.angle * gear;
-        motor.outRate = drive.rate * gear;
-    }
-
-    double cableTension() {
-        double past = Math.max(front.angle - cableTightMax, cableTightMin - front.angle);
+    double cableTension(int i) {
+        double a = servos[i].out(), past = Math.max(a - cableTightMax[i], cableTightMin[i] - a);
         return Math.max(0, Math.min(1, past / cableStretch));
     }
 
@@ -206,124 +114,72 @@ public class Turret implements Part {
     public void state(Map<String, Object> out) {
         out.put("frontDeg", frontDeg());
         out.put("backDeg", backDeg());
-        out.put("rateDegS", Math.toDegrees(front.rate));
-        out.put("atStop", contact);
-        out.put("cableTension", cableTension());
-        out.put("cableSide", front.angle > 0 ? "left" : "right");
-        out.put("cableDamaged", cableDamaged);
-        out.put("hand", handBody == null ? null : handBody == front ? "front" : "back");
-        out.put("wiggle", wiggleBody == null ? null : wiggleBody == front ? "front" : "back");
-        Map<String, Object> coach = new LinkedHashMap<>();
-        coach.put("leftLimitDeg", Math.toDegrees(Math.min(stopMax, cableTightMax)));
-        coach.put("rightLimitDeg", Math.toDegrees(Math.max(stopMin, cableTightMin)));
-        coach.put("leftIs", cableTightMax < stopMax ? "cable tight" : "hard stop");
-        coach.put("rightIs", cableTightMin > stopMin ? "cable tight" : "hard stop");
-        coach.put("playFrontDeg", Math.toDegrees(playFront));
-        coach.put("playBackDeg", Math.toDegrees(playBack));
-        coach.put("encoderDeg", Math.toDegrees(drive.angle));
-        out.put("coach", coach);
+        for (int i = 0; i < 2; i++) {
+            ServoModel s = servos[i];
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("deg", s.out());
+            m.put("powered", s.powered());
+            m.put("rateDegS", s.velocity * s.dir * s.gain);
+            m.put("atStop", contact[i]);
+            m.put("cableTension", cableTension(i));
+            m.put("cableSide", s.out() > 0 ? "left" : "right");
+            m.put("cableDamaged", cableDamaged[i]);
+            m.put("buzz", s.load);
+            m.put("feel", s.feel());
+            m.put("leftLimitDeg", leftLimit(i));
+            m.put("rightLimitDeg", rightLimit(i));
+            m.put("leftIs", state(i, true));
+            m.put("rightIs", state(i, false));
+            out.put(i == 0 ? "front" : "back", m);
+        }
     }
 
-    // turn {deg, back}: move your hand by deg (that turret's own degrees) and keep holding; release; wiggle {back}:
-    // hold the yaw motor and rock that turret for 2 s to feel the play (E-6); fixCable: re-route a tight cable
+    // turn {deg, back}: turn that turret by hand (only while its servo has no signal: a powered servo holds it);
+    // release: nothing to let go of; fixCable {back}: re-route a tight cable past the hard stops
     @Override
     public boolean hand(String action, JsonObject a, World w) {
-        boolean isBack = a.has("back") && a.get("back").getAsBoolean();
-        Body b = isBack ? back : front;
+        int i = a.has("back") && a.get("back").getAsBoolean() ? 1 : 0;
+        ServoModel s = servos[i];
         switch (action) {
             case "turn":
-                if (handBody != b) {
-                    handBody = b;
-                    handTarget = b.angle;
-                }
-                handTarget += Math.toRadians(a.get("deg").getAsDouble());
+                if (s.powered()) return false;
+                s.angleDeg = s.horn(Math.max(s.outStopLow, Math.min(s.outStopHigh, s.out() + a.get("deg").getAsDouble())));
                 return true;
             case "release":
-                handBody = null;
-                return true;
-            case "wiggle":
-                handBody = null;
-                wiggleBody = b;
-                wiggleT = 0;
-                wiggleLeft = a.has("seconds") ? a.get("seconds").getAsDouble() : 2;
                 return true;
             case "fixCable":
-                cableTightMax = Math.max(cableTightMax, stopMax + Math.toRadians(20));
-                cableTightMin = Math.min(cableTightMin, stopMin - Math.toRadians(20));
-                cableDamaged = false;
+                cableTightMax[i] = Math.max(cableTightMax[i], stopMax[i] + 20);
+                cableTightMin[i] = Math.min(cableTightMin[i], stopMin[i] - 20);
+                cableDamaged[i] = false;
                 return true;
             default:
                 return false;
         }
     }
 
+    // program 3's answer key, per turret: forward position, position per degree, the far ends LIMIT_MARGIN_DEG inside
+    // what it can reach, and the slower turret's speed over a straight right -> straight left swing
     @Override
     public void expected(Map<String, Expected> out, World w) {
-        MotorSpec s = motor.spec;
-        double volts = voltTime > 0 ? voltSum / voltTime : w.robot.battery.openCircuit();
-        // the SDK turns a motor type with CCW orientation (goBILDA) around: power and counts both flip
-        MotorPort port = yawPort(w);
-        int sdk = port != null && port.type != null && port.type.getOrientation() == Rotation.CCW ? -1 : 1;
-        int polarity = port != null && port.encoder != null && port.encoder.source == motor ? port.encoder.polarity : 1;
-        double ticksFront = sdk * polarity * gear * s.countsPerOutputRev() / 360;
-        double motorTurns = s.gear * Math.abs(gear);            // motor shaft turns per front turret turn
-        double stallPerPower = s.kT * motorTurns * volts / s.resistance;
-        double ksLeft = (drive.staticPos + front.staticPos + Math.abs(backRatio) * (backRatio > 0 ? back.staticPos : back.staticNeg)) / stallPerPower;
-        double ksRight = (drive.staticNeg + front.staticNeg + Math.abs(backRatio) * (backRatio > 0 ? back.staticNeg : back.staticPos)) / stallPerPower;
-        double viscous = front.viscous + backRatio * backRatio * back.viscous;
-        double emfDamping = s.kT * s.kE * motorTurns * motorTurns * s.gearEfficiency / s.resistance;
-        double kv = (s.kE * motorTurns + viscous * s.resistance / (s.kT * motorTurns * s.gearEfficiency)) / volts;
-        double tau = (drive.inertia + front.inertia + backRatio * backRatio * back.inertia) / (emfDamping + viscous);
-        double left = Math.toDegrees(Math.min(stopMax, cableTightMax)), right = Math.toDegrees(Math.max(stopMin, cableTightMin));
-        double ks = (ksLeft + ksRight) / 2;
-        out.put("yawTicksPerDegFront", new Expected(ticksFront, 0.03 * Math.abs(ticksFront), "ticks/deg",
-                "yaw encoder counts per degree of the front turret (left minus right over 180)"));
-        out.put("yawTicksPerDegBack", new Expected(ticksFront / backRatio, 0.03 * Math.abs(ticksFront / backRatio), "ticks/deg",
-                "yaw encoder counts per degree of the back turret"));
-        out.put("yawMaxDeg", new Expected(left - LIMIT_MARGIN_DEG, 4, "deg",
-                "left " + (cableTightMax < stopMax ? "cable tight" : "hard stop") + " minus 10 deg"));
-        out.put("yawMinDeg", new Expected(right + LIMIT_MARGIN_DEG, 4, "deg",
-                "right " + (cableTightMin > stopMin ? "cable tight" : "hard stop") + " plus 10 deg"));
-        out.put("yawPowerSign", new Expected(sdk * Math.signum(gear), 0.5, "", "+ power turns the turret left (+1) or right (-1)"));
-        out.put("yawTuningVoltage", new Expected(volts, 0.3, "V", "battery voltage while the yaw motor ran"));
-        out.put("yawKs", new Expected(ks, Math.max(0.02, 0.4 * ks), "power", "power that just starts the whole yaw drive moving (average of both ways)"));
-        out.put("yawKv", new Expected(Math.toRadians(kv), 0.12 * Math.toRadians(kv), "power per deg/s", "power per deg/s of steady turret speed"));
-        out.put("yawReactionTimeS", new Expected(tau, 0.02, "s",
-                "time constant: inertia over back-EMF and grease damping (the program times how far the turn lags its steady speed)"));
-        double kp = 1 / (2 * (tau + SENSE_DELAY_S / 2));
-        // the switch's edge met turning LEFT by hand, read by the motor encoder: a turret pushed by hand drives the
-        // motor through the gear play, so the motor (and the reading) trails the turret by half the play
-        if (hasIndex) out.put("yawIndexDeg", new Expected(indexDeg - indexHalfWidthDeg - Math.toDegrees(playFront) / 2, 0.3, "deg",
-                "front-turret angle where the index switch turns on when the turret turns left (program 3)"));
-        out.put("yawPlayDeg", new Expected(Math.toDegrees(playFront), 0.2, "deg", "free play of the front turret with the yaw motor held (E-6, program 3)"));
-        out.put("yawKp", new Expected(kp, 0.4 * kp, "deg/s per deg", "fastest kP that stops within 1 deg (time constant plus loop delay)"));
-    }
-
-    private MotorPort yawPort(World w) {
-        for (Hub hub : w.robot.hubs)
-            for (MotorPort p : hub.motors)
-                if (p.motor == motor) return p;
-        return null;
-    }
-
-    // one rotating body: inertia, grease (viscous), static and kinetic friction that can differ by direction
-    static final class Body {
-        double angle, rate, inertia = 0.01, viscous;
-        double staticPos, staticNeg, kineticPos, kineticNeg;
-
-        void step(double torque, double h) {
-            double drive = torque - viscous * rate;
-            double net;
-            if (rate == 0) {
-                if (drive >= 0 ? drive <= staticPos : -drive <= staticNeg) return;
-                net = drive - (drive > 0 ? kineticPos : -kineticNeg);
-            } else {
-                net = drive - (rate > 0 ? kineticPos : -kineticNeg);
-            }
-            double before = rate;
-            rate += net / inertia * h;
-            if (before * rate < 0) rate = 0;
-            angle += rate * h;
+        double slowest = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < 2; i++) {
+            ServoModel s = servos[i];
+            String side = i == 0 ? "front" : "back";
+            double fwd = s.position(0), perDeg = s.position(1) - s.position(0);
+            out.put(side + "YawForward", new Expected(fwd, 0.006, "position", "servo position that points the " + side + " turret straight forward"));
+            out.put(side + "YawPerDeg", new Expected(perDeg, 0.02 * Math.abs(perDeg), "position/deg",
+                    "servo position per turret degree (+ = left), from straight left minus straight right over 180"));
+            out.put(side + "YawMaxDeg", new Expected(leftLimit(i) - LIMIT_MARGIN_DEG, 4, "deg",
+                    "left " + state(i, true) + " minus " + (int) LIMIT_MARGIN_DEG + " deg"));
+            out.put(side + "YawMinDeg", new Expected(rightLimit(i) + LIMIT_MARGIN_DEG, 4, "deg",
+                    "right " + state(i, false) + " plus " + (int) LIMIT_MARGIN_DEG + " deg"));
+            slowest = Math.min(slowest, 180 / s.travelSeconds(-90, 90));
         }
+        out.put("yawDegPerS", new Expected(slowest, 0.12 * slowest, "deg/s", "the slower turret's straight right to straight left swing: 180 deg over its time"));
+    }
+
+    private String state(int i, boolean left) {
+        double lim = left ? leftLimit(i) : rightLimit(i);
+        return lim == (left ? stopMax[i] : stopMin[i]) ? "hard stop" : lim == (left ? cableTightMax[i] : cableTightMin[i]) ? "cable tight" : "servo end";
     }
 }

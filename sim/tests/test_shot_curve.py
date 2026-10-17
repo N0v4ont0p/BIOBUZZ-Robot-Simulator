@@ -1,6 +1,6 @@
 """The shot table as a curve (ShotCurve, the default) against straight lines between the points, scored by the
 simulator. Per robot and launcher a student-like table: at each spot the speed that went 4 for 4 is somewhere inside
-the window that scores (at least 75 %), the hood near the solver's. Both ways of reading the table are then scored at
+the window that scores (at least 75 %) (no hood: the launch angle is fixed). Both ways of reading the table are then scored at
 the saved distances, half way between them and past the last one (DECODE's way: the end fit carries on). The curve
 must score more on average and never lose more than one shot in 24 on any robot."""
 import os
@@ -27,18 +27,18 @@ def compile_cli(out):
 
 
 def curve(java, out, rows, ask):
-    text = "\n".join(f"{d},{s},{h},{f}" for d, s, h, f in rows) + "\n?\n" + "\n".join(str(d) for d in ask) + "\n"
+    text = "\n".join(f"{d},{s},{f}" for d, s, f in rows) + "\n?\n" + "\n".join(str(d) for d in ask) + "\n"
     res = subprocess.run([java, "-cp", out, "CurveCli"], input=text, capture_output=True, text=True, check=True)
     lines = res.stdout.strip().splitlines()
     vals = {}
     for l in lines[1:]:
         c = [float(x) for x in l.split()]
-        vals[round(c[0], 3)] = {"lines": (c[1], c[2], c[3]), "smooth": (c[4], c[5], c[6])}
+        vals[round(c[0], 3)] = {"lines": (c[1], c[2]), "smooth": (c[3], c[4])}
     return lines[0], vals
 
 
-def chance(s, side, d, speed, hood, feed=0.5, n=N):
-    return s.get(f"shots/chance?side={side}&distance={d}&speed={speed}&hood={hood}&feed={feed}&n={n}")["makeChance"]
+def chance(s, side, d, speed, feed=0.5, n=N):
+    return s.get(f"shots/chance?side={side}&distance={d}&speed={speed}&feed={feed}&n={n}")["makeChance"]
 
 
 def student_table(s, side, rnd):
@@ -47,11 +47,10 @@ def student_table(s, side, rnd):
         sol = s.get(f"shots/solve?side={side}&distance={d}")
         if not sol.get("reachable"):
             continue
-        hood = round(sol["hood"] + rnd.uniform(-0.01, 0.01), 3)
-        good = [sp for sp in range(int(sol["speed"]) - 200, int(sol["speed"]) + 201, 10) if chance(s, side, d, sp, hood, n=24) >= 0.75]
+        good = [sp for sp in range(int(sol["speed"]) - 200, int(sol["speed"]) + 201, 10) if chance(s, side, d, sp, n=24) >= 0.75]
         if not good:
             continue
-        rows.append((d, float(rnd.choice(good)), hood, 0.5))
+        rows.append((d, float(rnd.choice(good)), 0.5))
     return rows
 
 

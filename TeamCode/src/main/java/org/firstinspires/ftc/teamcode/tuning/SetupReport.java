@@ -34,12 +34,11 @@ public class SetupReport extends LinearOpMode {
         OWNS.put("CAD sheet", new String[]{"centerToFront", "centerToBack", "centerToLeft", "centerToRight", "frontPivotX", "frontPivotY",
                 "backPivotX", "backPivotY", "redFarCellX", "redFarCellY", "redAudienceCellX", "redAudienceCellY"});
         OWNS.put("1 Check Devices", new String[]{"devicesFound", "batteryVolts"});
-        OWNS.put("2 Motor Directions", new String[]{"intakeReversed", "frontFlywheelReversed", "backFlywheelReversed"});
-        OWNS.put("3 Yaw Tuner", new String[]{"yawTicksPerDegFront", "yawTicksPerDegBack", "yawMinDeg", "yawMaxDeg", "yawPowerSign", "yawKs",
-                "yawKv", "yawTuningVoltage", "yawKp", "yawPlayDeg", "yawHomeLeftDeg", "yawHomeRightDeg", "yawHomeFastDegS",
-                "yawHomeCreepDegS", "yawHomeCrossDegS"});
-        OWNS.put("4 Servo Positions", new String[]{"frontHoodMin", "frontHoodMax", "backHoodMin", "backHoodMax", "rampStowed", "rampDeployed",
-                "frontGateClosed", "frontGateOpen", "backGateClosed", "backGateOpen", "gateTravelS", "rampTravelS"});
+        OWNS.put("2 Motor Directions", new String[]{"intakeReversed", "pollenFeedReversed", "frontFlywheelReversed", "backFlywheelReversed", "rampReversed"});
+        OWNS.put("3 Turret Servos", new String[]{"frontYawForward", "frontYawPerDeg", "frontYawMinDeg", "frontYawMaxDeg", "backYawForward",
+                "backYawPerDeg", "backYawMinDeg", "backYawMaxDeg", "yawDegPerS"});
+        OWNS.put("4 Servo Positions", new String[]{"frontGateClosed", "frontGateOpen", "backGateClosed", "backGate2Closed", "backGateOpen",
+                "backGate2Open", "gateTravelS", "rampOutS", "rampInS"});
         OWNS.put("5 Drive Tuning", new String[]{"xPodOffset", "yPodOffset", "maxAchievableForwardVelocity", "maxAchievableStrafeVelocity",
                 "naturalForwardDeceleration", "naturalStrafeDeceleration", "headingKP", "forwardTranslationalPrimaryKP",
                 "strafeTranslationalPrimaryKP", "coastKV", "brakeKV"});
@@ -48,7 +47,7 @@ public class SetupReport extends LinearOpMode {
                 "*FlywheelVoltage"});
         OWNS.put("7 Flywheel Tuner: shot-speed check (optional)", new String[]{"*ReadyBandLow", "*ReadyBandHigh", "*ReadyBandLowSpeed",
                 "*ReadyBandHighSpeed"});
-        OWNS.put("8 / 9 Shot Tuners", new String[]{"frontYawTrimDeg", "backYawTrimDeg", "frontFeedChecked", "backFeedChecked"});
+        OWNS.put("8 / 9 Shot Tuners (back first)", new String[]{"frontYawTrimDeg", "backYawTrimDeg", "frontFeedChecked", "backFeedChecked"});
     }
 
     @Override
@@ -127,10 +126,12 @@ public class SetupReport extends LinearOpMode {
         } catch (NumberFormatException e) {
             return "";
         }
-        if (key.matches("(front|back)(Hood|Gate)(Min|Max|Closed|Open)|ramp(Stowed|Deployed)") && (v < 0 || v > 1)) return "a servo position outside 0 to 1";
-        if (key.equals("yawMinDeg") && v >= 0) return "the right stop must be right of forward (below 0)";
-        if (key.equals("yawMaxDeg") && v <= 0) return "the left stop must be left of forward (above 0)";
-        if (key.endsWith("YawTrimDeg") && Math.abs(v) > AutoAim.MAX_TRIM_DEG) return "over " + (int) AutoAim.MAX_TRIM_DEG + " deg: a turret zeroed while turned";
+        if (key.matches("(front|back)Gate2?(Closed|Open)") && (v < 0 || v > 1)) return "a servo position outside 0 to 1";
+        if (key.matches("ramp(Out|In)S") && (v <= 0 || v > 5)) return "a ramp time outside 0 to 5 s";
+        if (key.matches("(front|back)YawForward") && (v < 0 || v > 1)) return "a servo position outside 0 to 1";
+        if (key.matches("(front|back)YawMinDeg") && v >= 0) return "the right limit must be right of forward (below 0)";
+        if (key.matches("(front|back)YawMaxDeg") && v <= 0) return "the left limit must be left of forward (above 0)";
+        if (key.endsWith("YawTrimDeg") && Math.abs(v) > AutoAim.MAX_TRIM_DEG) return "over " + (int) AutoAim.MAX_TRIM_DEG + " deg: program 3's forward position is off";
         if (key.matches("(front|back)PivotX")) {
             double reach = Math.max(Tuned.centerToFront, Tuned.centerToBack);
             if (!Double.isNaN(reach) && Math.abs(v) > reach) return "outside the robot's footprint";

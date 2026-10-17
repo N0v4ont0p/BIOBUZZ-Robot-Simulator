@@ -29,7 +29,7 @@ def run(s):
     assert pulled["files"] == ["biobuzz_results.csv"], pulled
     r = s.post("loop/coach")
     assert r["ok"] and r["installed"], r
-    assert r["values"] == {} and r["info"]["devicesFound"] == "14/14", r
+    assert r["values"] == {} and r["info"]["devicesFound"] == "16/16", r
     assert read(yaml) == before, "program 1 is info only: team-config.yaml must not change"
     wait_robot(s)
 
@@ -39,17 +39,17 @@ def run(s):
                 "2 Motor Directions,frontFlywheelEncoderOpposite,false,9000000000002\n"
                 "2 Motor Directions,backFlywheelReversed,true,9000000000003\n"
                 "2 Motor Directions,backFlywheelEncoderOpposite,true,9000000000004\n"
-                "4 Servo Positions,frontHoodMin,0.120,9000000000005\n")
+                "4 Servo Positions,backGate2Closed,0.620,9000000000005\n")
     s.post("loop/pull")
     plan = s.get("loop/plan")
-    assert plan["values"] == {"Intake.REVERSED": True, "Launcher.FRONT_REVERSED": True, "frontHoodMin": 0.12}, plan["values"]
+    assert plan["values"] == {"Intake.REVERSED": True, "Launcher.FRONT_REVERSED": True, "backGate2Closed": 0.62}, plan["values"]
     r = s.post("loop/coach")
     assert r["ok"] and r["installed"], r
     assert "public static boolean REVERSED = true;" in read(os.path.join(sandbox, TC, "subsystems/Intake.java"))
     launcher = read(os.path.join(sandbox, TC, "subsystems/Launcher.java"))
     assert "FRONT_REVERSED = true;" in launcher and "BACK_REVERSED = false;" in launcher, "back flywheel had a STOP"
-    assert "frontHoodMin: {value: 0.12, origin: measured" in read(yaml)
-    assert "+    frontHoodMin: {value: 0.12, origin: measured" in r["diff"], r["diff"]
+    assert "backGate2Closed: {value: 0.62, origin: measured" in read(yaml)
+    assert "+    backGate2Closed: {value: 0.62, origin: measured" in r["diff"], r["diff"]
     assert len(r["stop"]) == 1 and "back flywheel" in r["stop"][0], r["stop"]
     wait_robot(s)
 

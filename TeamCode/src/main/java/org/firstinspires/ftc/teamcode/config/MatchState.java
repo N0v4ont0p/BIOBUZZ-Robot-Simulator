@@ -11,7 +11,6 @@ public final class MatchState {
 
     public static volatile Alliance alliance = null;
     public static volatile Pose pose = null;
-    public static volatile boolean yawZeroed = false;
     // when TeleOp last wrote `pose` (0 = the auto wrote it). A TeleOp restarted within RESUME_MS (a mid-match
     // disconnect) resumes from it; later than that it is a practice run and starts from the start corner.
     public static volatile long teleOpPoseMs = 0;

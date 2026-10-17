@@ -1,9 +1,11 @@
-"""Program 8 (Front Shot Tuner), semi-automatic, on a robot whose programs 1-7 and CAD / field sheets are in the
-code (true values). The student starts in the red corner and presses START; the robot drives itself to each spot.
-At each spot the student sets speed (square / circle) and hood (dpad up / down), loads ONE NECTAR, fires (R2),
-watches the shot and honestly answers in (cross) / not in (triangle). 4 in a row save the point and the robot drives
-itself to the next spot. The speed / hood a coach would suggest come from /api/shots/solve. At the end every
-saved point must still score on this robot (frontShotPointsMakeable)."""
+"""Program 9 (Front Shot Tuner: NECTAR, the backup launcher), semi-automatic, on a robot whose programs 1-7 and CAD /
+field sheets are in the code (true values): a short session (4 points, then share twice to finish anyway), skipping
+its feed check with L1 (the robot drives on). The student starts in the red corner and presses START; the robot drives
+itself to each spot. At each spot the student sets the speed (square / circle; no hood, the launch angle is fixed),
+loads ONE element, fires (R2), watches the shot and honestly answers in (cross) / not in (triangle). 4 in a row save
+the point and the robot drives itself to the next spot. The speed a coach would suggest comes from /api/shots/solve.
+At the end every saved point must still score on this robot (<side>ShotPointsMakeable). run() is shared with program
+8 (test_p8_back_shots.py, the full session)."""
 import os
 import re
 import time
@@ -11,14 +13,13 @@ import time
 from harness import running_sim
 from launcher_student import pull_trigger, start_corner, straighten_turrets, tuned_robot, value_after, wait_shot_done, last_shot
 
-SPEED_STEP, HOOD_STEP = 20, 0.005
+SPEED_STEP = 20
+# points each launcher aims for (ShotTuner.MIN_POINTS_BACK / MIN_POINTS_FRONT)
+MIN_POINTS = (6, 10)
 
 
 def read_settings(s):
-    t = s.telemetry()
-    speed = float(value_after(t, "Flywheel set / now").split("/")[0])
-    hood = float(value_after(t, "Hood / yaw trim").split("/")[0])
-    return speed, hood
+    return float(value_after(s.telemetry(), "Flywheel set / now").split("/")[0])
 
 
 def nudge(s, up, down, steps):
@@ -26,10 +27,8 @@ def nudge(s, up, down, steps):
         s.press(up if steps > 0 else down, hold=0.05)
 
 
-def set_shot(s, speed, hood):
-    cur_speed, cur_hood = read_settings(s)
-    nudge(s, "circle", "square", round((speed - cur_speed) / SPEED_STEP))
-    nudge(s, "dpad_up", "dpad_down", round((hood - cur_hood) / HOOD_STEP))
+def set_shot(s, speed):
+    nudge(s, "circle", "square", round((speed - read_settings(s)) / SPEED_STEP))
     time.sleep(0.2)
     return read_settings(s)
 
@@ -110,7 +109,7 @@ def save_point(s, side):
     d = at_spot(s)
     sol = s.get(f"shots/solve?side={side}&distance={d}")
     assert sol["reachable"], sol
-    speed, hood = set_shot(s, sol["speed"], sol["hood"])
+    speed = set_shot(s, sol["speed"])
     start = points_saved(s)
     misses = 0
     for n in range(16):
@@ -119,7 +118,7 @@ def save_point(s, side):
         if points_saved(s) > start:
             if "FEED CHECK:" in s.telemetry():
                 feed_check(s, side)
-            print(f"point {start + 1}: {d:.1f} in (off the spot {value_after(s.telemetry(), 'Off the spot')}), speed {speed:.0f}, hood {hood:.3f}, {n + 1} shots")
+            print(f"point {start + 1}: {d:.1f} in (off the spot {value_after(s.telemetry(), 'Off the spot')}), speed {speed:.0f}, {n + 1} shots")
             return True
         if shot["result"] == "made":
             misses = 0
@@ -128,7 +127,7 @@ def save_point(s, side):
         print(f"  miss at {d:.1f} in: {shot['detail']}")
         if misses >= 2 and shot["detail"] in ("short", "long"):
             s.press("circle" if shot["detail"] == "short" else "square")
-            speed, hood = read_settings(s)
+            speed = read_settings(s)
             misses = 0
     print(f"  gave up on {d:.1f} in")
     s.press("left_bumper")
@@ -136,14 +135,14 @@ def save_point(s, side):
 
 
 def buttons_check(s, side):
-    """Each button moves the shot the way the guide says: dpad up = more launch angle, dpad left = aims further left,
-    circle = faster wheel (and the opposite buttons put it back)."""
+    """Each button moves the shot the way the guide says: dpad left = aims further left, circle = faster wheel (and the
+    opposite buttons put it back). dpad up / down do nothing: no hood, the launch angle stays the build's."""
     at_spot(s)
     base = shoot(s, side)
     nudge(s, "dpad_up", "dpad_down", 8)
     up = shoot(s, side)
     nudge(s, "dpad_up", "dpad_down", -8)
-    assert up["launchDeg"] > base["launchDeg"] + 1, ("dpad up must give more launch angle", base["launchDeg"], up["launchDeg"])
+    assert abs(up["launchDeg"] - base["launchDeg"]) < 3, ("no hood: dpad up must not change the launch angle", base["launchDeg"], up["launchDeg"])
     nudge(s, "dpad_left", "dpad_right", 4)
     left = shoot(s, side)
     nudge(s, "dpad_left", "dpad_right", -4)
@@ -152,7 +151,7 @@ def buttons_check(s, side):
     fast = shoot(s, side)
     nudge(s, "circle", "square", -10)
     assert fast["wheelTicks"] > base["wheelTicks"] + 100, ("circle must spin the wheel faster", base["wheelTicks"], fast["wheelTicks"])
-    print(f"buttons: dpad up {base['launchDeg']:.1f} -> {up['launchDeg']:.1f} deg launch, dpad left {base['yawDeg']:.1f} -> "
+    print(f"buttons: launch angle {base['launchDeg']:.1f} / {up['launchDeg']:.1f} deg (fixed), dpad left {base['yawDeg']:.1f} -> "
           f"{left['yawDeg']:.1f} deg aim, circle {base['wheelTicks']:.0f} -> {fast['wheelTicks']:.0f} ticks/s")
 
 
@@ -181,7 +180,8 @@ def install_live(s, values):
 
 def run(s, side=0, points=10, live=False):
     name = ["front", "back"][side]
-    number = 8 + side
+    # POLLEN first (team 2026-10-17): the back launcher is program 8, the front program 9
+    number = 9 if side == 0 else 8
     s.preset_config()
     values = tuned_robot(s)
     if live:
@@ -194,9 +194,8 @@ def run(s, side=0, points=10, live=False):
     s.wait_text("Alliance")
     s.press("circle")
     s.press("options")
-    # turn the turrets straight forward by hand (the sim starts them up to 6 deg off), then zero them
+    # turn the turrets straight forward by hand (the sim starts them up to 6 deg off): the servos take over at START
     straighten_turrets(s)
-    s.press("cross")
     s.wait_text("Ready.")
     if live:
         assert "from the robot's results file" in s.telemetry(), s.telemetry()
@@ -217,7 +216,7 @@ def run(s, side=0, points=10, live=False):
     trim = s.get("loop/status")["results"].get(name + "YawTrimDeg")
     assert trim is not None and abs(float(trim)) < 0.01, trim
     s.press("share")
-    if saved < 10:
+    if saved < MIN_POINTS[side]:
         s.wait_text("press share again")
         s.press("share")
     s.wait_text(f"PROGRAM {number} COMPLETE")
@@ -239,6 +238,8 @@ def run(s, side=0, points=10, live=False):
 
 
 if __name__ == "__main__":
-    with running_sim(seed=11) as s:
-        run(s)
-    print("PASS program 8")
+    with running_sim(seed=12) as s:
+        # this session skips its feed check with L1: the robot must drive on by itself
+        SKIP_FEED_CHECK.append(True)
+        run(s, side=0, points=4)
+    print("PASS program 9")

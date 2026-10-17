@@ -1,0 +1,8 @@
+{
+  "name": "C. Back gate servo 2 a spline off",
+  "description": "The back gate's second servo went onto its spline a tooth off. Its positions are nowhere near 1 - servo 1's, so copying servo 1 mirrored would make the two fight. Program 4 sets servo 2 on its own, by ear: step it until the buzz stops.",
+  "gate": {"back2": {"refDeg": {"min": 50, "max": 56}}},
+  "faults": [
+    {"type": "backGateSplineOff", "text": "Back gate servo 2 sits a spline tooth off: its positions are its own.", "caughtBy": "4 Servo Positions, steps 4 and 6 (back gate servo 2): match it to servo 1 until neither buzzes"}
+  ]
+}

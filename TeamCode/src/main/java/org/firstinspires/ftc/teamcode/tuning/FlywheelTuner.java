@@ -71,7 +71,7 @@ public class FlywheelTuner extends LinearOpMode {
     @Override
     public void runOpMode() {
         Guide g = new Guide(telemetry, 7);
-        if (g.missingDevices(this, DeviceNames.FRONT_FLYWHEEL, DeviceNames.BACK_FLYWHEEL, DeviceNames.INTAKE)) return;
+        if (g.missingDevices(this, DeviceNames.FRONT_FLYWHEEL, DeviceNames.BACK_FLYWHEEL, DeviceNames.INTAKE, DeviceNames.POLLEN_FEED)) return;
         for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         DcMotorEx[] wheels = {motor(DeviceNames.FRONT_FLYWHEEL, Launcher.FRONT_REVERSED), motor(DeviceNames.BACK_FLYWHEEL, Launcher.BACK_REVERSED)};
         Servo[] gates = {servo(DeviceNames.FRONT_GATE), servo(DeviceNames.BACK_GATE)};
@@ -521,7 +521,7 @@ public class FlywheelTuner extends LinearOpMode {
                             t = 0;
                         }
                         if (shotPhase == 1) {
-                            intake.run(t < AutoRunner.FEED_S ? FEED_TEST_POWER : 0);
+                            intake.feedOne(side == 1, t < AutoRunner.FEED_S ? FEED_TEST_POWER : 0);
                             double error = velocity - target;
                             dip = Math.max(dip, -error);
                             boolean inBand = Math.abs(error) <= band[side];

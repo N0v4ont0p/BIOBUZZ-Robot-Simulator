@@ -18,7 +18,7 @@ def shot_table(s, side, distances):
             continue
         n += 1
         key = f"{SIDES[side]}Shot{n:02d}"
-        out.update({key + "Distance": d, key + "Speed": round(sol["speed"]), key + "Hood": round(sol["hood"], 3), key + "Feed": 0.5})
+        out.update({key + "Distance": d, key + "Speed": round(sol["speed"]), key + "Feed": 0.5})
     assert n >= 2, out
     return out
 
@@ -36,9 +36,6 @@ def run(s, extra=None):
     s.wait_text("Alliance")
     time.sleep(0.5)
     s.press("circle")
-    # the turrets start straight forward: zero them
-    s.press("cross")
-    s.wait_text("Turret zero: SET")
     for _ in range(3):
         time.sleep(0.5)
         s.press("options")
@@ -61,7 +58,8 @@ def run(s, extra=None):
     s.hold("right_bumper", True)
     s.wait(lambda st: st["world"]["intake"]["held"] == 0, 8, "both elements fired")
     s.hold("right_bumper", False)
-    time.sleep(2.0)
+    # watch both land (a 59 deg shot is in the air about a second)
+    s.wait(lambda st: all(x["result"] != "flying" for x in s.get("shots")["shots"] if x["id"] > before), 10, "both shots landed")
     shots = [x for x in s.get("shots")["shots"] if x["id"] > before]
     for x in shots:
         print(f"{x['side']} {x['type']}: {x['result']} ({x['detail']}), {x['distanceIn']:.1f} in, exit {x['exitMps']:.2f} m/s,"

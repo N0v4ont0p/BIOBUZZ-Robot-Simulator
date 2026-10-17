@@ -28,7 +28,7 @@ Bench.register({
 const PARTS = {
   'drive.leftFront': 'left-front wheel motor', 'drive.leftBack': 'left-back wheel motor',
   'drive.rightFront': 'right-front wheel motor', 'drive.rightBack': 'right-back wheel motor',
-  'intake': 'intake motor', 'yaw': 'turret (yaw) motor', 'yawIndex': 'turret index switch (magnetic, sees forward)', 'flywheel.front': 'front flywheel motor', 'flywheel.back': 'back flywheel motor',
-  'hood.front': 'front hood servo', 'hood.back': 'back hood servo', 'ramp': 'ramp servo', 'gate.front': 'front gate servo',
-  'gate.back': 'back gate servo', 'pinpoint': 'goBILDA Pinpoint (odometry)',
+  'intake': 'intake motor (roller + NECTAR feed)', 'pollenFeed': 'POLLEN feeder motor (2 wheels)', 'flywheel.front': 'front flywheel motor', 'flywheel.back': 'back flywheel motor',
+  'ramp.left': 'left ramp servo (continuous rotation)', 'ramp.right': 'right ramp servo (continuous rotation)', 'gate.front': 'front gate servo',
+  'gate.back': 'back gate servo 1', 'gate.back2': 'back gate servo 2', 'yaw.front': 'front turret servo', 'yaw.back': 'back turret servo', 'pinpoint': 'goBILDA Pinpoint (odometry)',
 };

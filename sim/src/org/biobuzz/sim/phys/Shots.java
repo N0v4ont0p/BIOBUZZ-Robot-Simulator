@@ -236,6 +236,9 @@ public class Shots implements Part {
     private final Robot robot;
     public final List<Cell> cells = new ArrayList<>();
     public final double[] pivotX = new double[2], pivotY = new double[2], releaseZ = new double[2], exitOffsetIn = new double[2];
+    // no hood (team 2026-10-17): each launcher's angle is fixed by the build (CAD v1: 58.7 POLLEN, 58.5 NECTAR, about
+    // 65 if the element leaves the last roller at once; the robot may differ: check with a side video)
+    public final double[] launchDeg = new double[2];
     public final double yawSpreadDeg, pitchSpreadDeg, dragCd;
     private final List<Record> records = new ArrayList<>();
     private final List<double[]> landed = new ArrayList<>();
@@ -246,15 +249,18 @@ public class Shots implements Part {
     public Shots(Robot r, Truth t) {
         robot = r;
         rng = new Random(t.seed * 15485863L + 5);
-        // turret rotation axes on the robot (x forward, y left), release height above the tiles, barrel exit past the axis
-        pivotX[0] = pick(t, "turret.frontPivotX", 2.5, 3.5);
-        pivotY[0] = pick(t, "turret.frontPivotY", -0.5, 0.5);
-        pivotX[1] = pick(t, "turret.backPivotX", -5.0, -4.0);
-        pivotY[1] = pick(t, "turret.backPivotY", -0.5, 0.5);
-        releaseZ[0] = pick(t, "launcher.front.releaseHeightIn", 14, 16);
-        releaseZ[1] = pick(t, "launcher.back.releaseHeightIn", 13, 15);
-        exitOffsetIn[0] = pick(t, "launcher.front.exitOffsetIn", 2, 3);
-        exitOffsetIn[1] = pick(t, "launcher.back.exitOffsetIn", 2, 3);
+        // turret rotation axes on the robot (x forward, y left), release height above the tiles, release past the axis:
+        // CAD v1 (4.32 / -4.63 in, 12.2 / 12.0 in, within 0.2 in of the axis) give or take what a build changes
+        pivotX[0] = pick(t, "turret.frontPivotX", 4.1, 4.5);
+        pivotY[0] = pick(t, "turret.frontPivotY", -0.15, 0.15);
+        pivotX[1] = pick(t, "turret.backPivotX", -4.85, -4.4);
+        pivotY[1] = pick(t, "turret.backPivotY", -0.15, 0.15);
+        releaseZ[0] = pick(t, "launcher.front.releaseHeightIn", 11.8, 12.6);
+        releaseZ[1] = pick(t, "launcher.back.releaseHeightIn", 11.6, 12.4);
+        exitOffsetIn[0] = pick(t, "launcher.front.exitOffsetIn", -0.3, 0.1);
+        exitOffsetIn[1] = pick(t, "launcher.back.exitOffsetIn", -0.2, 0.1);
+        launchDeg[0] = pick(t, "launcher.front.launchDeg", 57.5, 60.5);
+        launchDeg[1] = pick(t, "launcher.back.launchDeg", 57.5, 60.5);
         yawSpreadDeg = t.num("shots.yawSpreadDeg", 0.6);
         pitchSpreadDeg = t.num("shots.pitchSpreadDeg", 0.5);
         dragCd = pick(t, "shots.dragCd", 0.45, 0.55);
@@ -296,14 +302,13 @@ public class Shots implements Part {
         return 0.5 * RHO * cd * Math.PI * dm * dm / 4 / massKg * 0.0254;
     }
 
-    // the element leaves the wheel: release point and direction from the robot pose, turret and hood right now
+    // the element leaves the wheel: release point and direction from the robot pose, turret and launch angle right now
     public void launch(int side, Element e, double exitMps, double wheelTicks, String cause, World w) {
         Drive d = w.robot.drive;
         double h = d.heading;
         double turretDeg = side == 0 ? w.robot.turret.frontDeg() : w.robot.turret.backDeg();
         double yaw = h + Math.toRadians(turretDeg + rng.nextGaussian() * yawSpreadDeg);
-        double launchDeg = w.robot.servoMechs.hoodLaunchDeg(side);
-        double pitch = Math.toRadians(launchDeg + rng.nextGaussian() * pitchSpreadDeg);
+        double pitch = Math.toRadians(launchDeg[side] + rng.nextGaussian() * pitchSpreadDeg);
         double c = Math.cos(h), s = Math.sin(h);
         double rx = c * pivotX[side] - s * pivotY[side], ry = s * pivotX[side] + c * pivotY[side];
         double px = d.x + rx, py = d.y + ry;
@@ -444,16 +449,6 @@ public class Shots implements Part {
         return new double[]{-c.x / n, -c.y / n};
     }
 
-    // hood launch angle a servo position would give (the hood linkage at that position, clamped by its stops)
-    public double hoodDegAt(int side, double position) {
-        ServoModel s = robot.servoMechs.servo(side == 0 ? "hood.front" : "hood.back");
-        double keep = s.angleDeg;
-        s.angleDeg = Math.max(s.stopLowDeg(), Math.min(s.stopHighDeg(), servoDeg(s, position)));
-        double deg = robot.servoMechs.hoodLaunchDeg(side);
-        s.angleDeg = keep;
-        return deg;
-    }
-
     private PwmControl.PwmRange range(ServoModel s) {
         for (Hub h : robot.hubs) for (ServoPort p : h.servos) if (p.servo == s) return p.range;
         return PwmControl.PwmRange.defaultRange;
@@ -475,9 +470,6 @@ public class Shots implements Part {
         String[] sides = {"front", "back"};
         double travel = 0;
         for (int i = 0; i < 2; i++) {
-            ServoModel hood = robot.servoMechs.servo(i == 0 ? "hood.front" : "hood.back");
-            m.put(sides[i] + "HoodMin", round3(servoPosition(hood, hood.stopLowDeg() + 3)));
-            m.put(sides[i] + "HoodMax", round3(servoPosition(hood, hood.stopHighDeg() - 3)));
             ServoModel gate = robot.servoMechs.servo(i == 0 ? "gate.front" : "gate.back");
             double keep = gate.angleDeg;
             List<Double> closed = new ArrayList<>(), open = new ArrayList<>();
@@ -495,6 +487,15 @@ public class Shots implements Part {
             m.put(sides[i] + "GateClosed", round3(c));
             m.put(sides[i] + "GateOpen", round3(o));
             travel = Math.max(travel, Math.abs(servoDeg(gate, o) - servoDeg(gate, c)) / gate.speedDegPerS);
+            if (i == 1) {
+                // the second back-gate servo at the arm angles the first one gives
+                ServoModel g2 = robot.servoMechs.servo("gate.back2");
+                double c2 = servoPosition(g2, g2.horn(gate.outOf(servoDeg(gate, c))));
+                double o2 = servoPosition(g2, g2.horn(gate.outOf(servoDeg(gate, o))));
+                m.put("backGate2Closed", round3(c2));
+                m.put("backGate2Open", round3(o2));
+                travel = Math.max(travel, Math.abs(servoDeg(g2, o2) - servoDeg(g2, c2)) / g2.speedDegPerS);
+            }
         }
         m.put("gateTravelS", Math.round(travel * 1.15 * 1000) / 1000.0);
         m.put("frontPivotX", pivotX[0]);
@@ -533,7 +534,7 @@ public class Shots implements Part {
             feedPerPower = in.motor.spec.freeRadS / in.motor.spec.gear * in.rollerRadiusIn * in.grip;
         }
 
-        Flight fly(double distance, double ticks, double hoodDeg, double feed, Random jit) {
+        Flight fly(double distance, double ticks, double feed, Random jit) {
             double m = mass, grip = 1, diam = type == Element.Type.NECTAR ? 3.6 : 2.8, dYaw = 0, dPitch = 0;
             if (jit != null) {
                 m *= 1 + (jit.nextDouble() * 2 - 1) * 0.04;
@@ -545,7 +546,7 @@ public class Shots implements Part {
             }
             double px = cell.x + ax * distance, py = cell.y + ay * distance;
             double yaw = Math.atan2(cell.y - py, cell.x - px) + Math.toRadians(dYaw);
-            double pitch = Math.toRadians(hoodDeg + dPitch);
+            double pitch = Math.toRadians(launchDeg[side] + dPitch);
             double v = robot.flywheels.exitMps(side, type, m, grip, ticks, feed * feedPerPower) / 0.0254;
             Flight f = new Flight(px + Math.cos(yaw) * exitOffsetIn[side], py + Math.sin(yaw) * exitOffsetIn[side], releaseZ[side],
                     v * Math.cos(pitch) * Math.cos(yaw), v * Math.cos(pitch) * Math.sin(yaw), v * Math.sin(pitch),
@@ -557,74 +558,83 @@ public class Shots implements Part {
             return f;
         }
 
-        double makeChance(double distance, double ticks, double hoodDeg, double feed) {
-            return makeChance(distance, ticks, hoodDeg, feed, 24);
+        double makeChance(double distance, double ticks, double feed) {
+            return makeChance(distance, ticks, feed, 24);
         }
 
-        double makeChance(double distance, double ticks, double hoodDeg, double feed, int n) {
+        double makeChance(double distance, double ticks, double feed, int n) {
             Random jit = new Random(1234567L + side);
             int made = 0;
-            for (int k = 0; k < n; k++) if (fly(distance, ticks, hoodDeg, feed, jit).in == cell) made++;
+            for (int k = 0; k < n; k++) if (fly(distance, ticks, feed, jit).in == cell) made++;
             return made / (double) n;
+        }
+
+        // the flywheel speed whose shot arrives at the opening's centre from this distance (NaN = it cannot get there)
+        double speedFor(double distance) {
+            double a = 100, b = maxTicks;
+            if (fly(distance, b, 0.5, null).arrival() < 0) return Double.NaN;
+            for (int it = 0; it < 22; it++) {
+                double mid = (a + b) / 2;
+                if (fly(distance, mid, 0.5, null).arrival() < 0) a = mid;
+                else b = mid;
+            }
+            return (a + b) / 2;
         }
     }
 
-    // a flywheel speed (ticks/s) and hood position that score from this distance (pivot to CELL), and how often
+    // the flywheel speed (ticks/s) that scores from this distance (pivot to CELL) at this launcher's fixed angle, and how
+    // often; reachable = false when no speed up to 95 % of top gets it in at least half the time
     public Map<String, Object> solve(int side, double distance) {
         Plan plan;
-        double[] hoodPos = new double[25], hoodDeg = new double[25];
         synchronized (World.LOCK) {
             plan = new Plan(side, cell("redAudience"));
-            ServoModel hood = robot.servoMechs.servo(side == 0 ? "hood.front" : "hood.back");
-            double lo = servoPosition(hood, hood.stopLowDeg() + 3), hi = servoPosition(hood, hood.stopHighDeg() - 3);
-            for (int k = 0; k < hoodPos.length; k++) {
-                hoodPos[k] = Math.min(lo, hi) + Math.abs(hi - lo) * k / (hoodPos.length - 1);
-                hoodDeg[k] = hoodDegAt(side, hoodPos[k]);
-            }
         }
-        double[] speed = new double[hoodPos.length], chance = new double[hoodPos.length];
-        double best = 0;
-        for (int k = 0; k < hoodPos.length; k++) {
-            double a = 100, b = plan.maxTicks;
-            speed[k] = Double.NaN;
-            if (plan.fly(distance, b, hoodDeg[k], 0.5, null).arrival() < 0) continue;
-            for (int it = 0; it < 22; it++) {
-                double mid = (a + b) / 2;
-                if (plan.fly(distance, mid, hoodDeg[k], 0.5, null).arrival() < 0) a = mid;
-                else b = mid;
-            }
-            speed[k] = (a + b) / 2;
-            chance[k] = plan.makeChance(distance, speed[k], hoodDeg[k], 0.5);
-            best = Math.max(best, chance[k]);
-        }
-        List<Integer> good = new ArrayList<>();
-        for (int k = 0; k < hoodPos.length; k++) if (!Double.isNaN(speed[k]) && chance[k] >= best - 0.05) good.add(k);
+        double speed = plan.speedFor(distance);
+        double chance = Double.isNaN(speed) ? 0 : plan.makeChance(distance, speed, 0.5);
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("side", side == 0 ? "front" : "back");
         m.put("distance", distance);
-        if (good.isEmpty() || best == 0) {
+        m.put("launchDeg", launchDeg[side]);
+        if (Double.isNaN(speed) || chance < 0.5) {
             m.put("reachable", false);
             return m;
         }
-        int k = good.get(good.size() / 2);
         m.put("reachable", true);
-        m.put("speed", speed[k]);
-        m.put("hood", hoodPos[k]);
-        m.put("launchDeg", hoodDeg[k]);
-        m.put("makeChance", chance[k]);
-        m.put("exitMps", robot.flywheels.exitMps(side, plan.type, plan.mass, 1, speed[k], 0.5 * plan.feedPerPower));
+        m.put("speed", speed);
+        m.put("makeChance", chance);
+        m.put("exitMps", robot.flywheels.exitMps(side, plan.type, plan.mass, 1, speed, 0.5 * plan.feedPerPower));
+        return m;
+    }
+
+    // the distances (pivot to CELL, every 2 in from 20 to 140) this launcher scores from at its fixed angle: a fixed
+    // angle only reaches a band (too close it flies over, too far the wheel is not fast enough)
+    public Map<String, Object> band(int side) {
+        Plan plan;
+        synchronized (World.LOCK) {
+            plan = new Plan(side, cell("redAudience"));
+        }
+        double lo = Double.NaN, hi = Double.NaN;
+        for (double d = 20; d <= 140; d += 2) {
+            double sp = plan.speedFor(d);
+            if (Double.isNaN(sp) || plan.makeChance(d, sp, 0.5, 12) < 0.5) continue;
+            if (Double.isNaN(lo)) lo = d;
+            hi = d;
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("side", side == 0 ? "front" : "back");
+        m.put("launchDeg", launchDeg[side]);
+        m.put("minDistance", lo);
+        m.put("maxDistance", hi);
         return m;
     }
 
     // how often a setting scores from this distance on this robot (n shots with the true spread)
-    public double chance(int side, double distance, double ticks, double hoodPosition, double feed, int n) {
+    public double chance(int side, double distance, double ticks, double feed, int n) {
         Plan plan;
-        double deg;
         synchronized (World.LOCK) {
             plan = new Plan(side, cell("redAudience"));
-            deg = hoodDegAt(side, hoodPosition);
         }
-        return plan.makeChance(distance, ticks, deg, feed, Math.max(1, n));
+        return plan.makeChance(distance, ticks, feed, Math.max(1, n));
     }
 
     // programs 8 / 9: would each saved point score on this robot? (each point re-shot 24 times with the true spread)
@@ -634,22 +644,18 @@ public class Shots implements Part {
         m.put("side", side == 0 ? "front" : "back");
         if (points == null) return m;
         Plan plan;
-        double[] deg = new double[points.size()];
         synchronized (World.LOCK) {
             plan = new Plan(side, cell("redAudience"));
-            for (int k = 0; k < points.size(); k++) deg[k] = hoodDegAt(side, points.get(k)[2]);
         }
         List<Map<String, Object>> rows = new ArrayList<>();
         int ok = 0;
-        for (int k = 0; k < points.size(); k++) {
-            double[] p = points.get(k);
-            double chance = plan.makeChance(p[0], p[1], deg[k], p[3]);
+        for (double[] p : points) {
+            double chance = plan.makeChance(p[0], p[1], p[2]);
             if (chance >= 0.5) ok++;
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("distance", p[0]);
             row.put("speed", p[1]);
-            row.put("hood", p[2]);
-            row.put("feed", p[3]);
+            row.put("feed", p[2]);
             row.put("makeChance", chance);
             rows.add(row);
         }
@@ -658,17 +664,21 @@ public class Shots implements Part {
         return m;
     }
 
-    // the rows the shot tuner kept: biobuzz_<side>_points.csv minus its "# removed" lines; null = no file
+    // the rows the shot tuner kept, {distance, speed, feed}: biobuzz_<side>_points.csv minus its "# removed" lines; the
+    // header and "# columns" lines say where the feed is (files from before 2026-10-17 have a hood column); null = no file
     private static List<double[]> savedPoints(int side) {
         Sim sim = Sim.get();
         if (sim == null) return null;
         File f = new File(sim.ws.sdcard, "FIRST/biobuzz_" + (side == 0 ? "front" : "back") + "_points.csv");
         if (!f.isFile()) return null;
         List<double[]> rows = new ArrayList<>();
+        int feed = 2;
         try {
             for (String line : Files.readAllLines(f.toPath(), StandardCharsets.UTF_8)) {
                 line = line.trim();
-                if (line.startsWith("# removed")) {
+                if (line.startsWith("distance_in") || line.startsWith("# columns ")) {
+                    feed = java.util.Arrays.asList(line.replace("# columns ", "").split(",")).indexOf("feed");
+                } else if (line.startsWith("# removed")) {
                     double d = Double.parseDouble(line.substring(9).trim());
                     for (int k = rows.size() - 1; k >= 0; k--) {
                         if (Math.abs(rows.get(k)[0] - d) < 0.006) {
@@ -678,7 +688,7 @@ public class Shots implements Part {
                     }
                 } else if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
                     String[] c = line.split(",");
-                    rows.add(new double[]{Double.parseDouble(c[0]), Double.parseDouble(c[1]), Double.parseDouble(c[2]), Double.parseDouble(c[3])});
+                    rows.add(new double[]{Double.parseDouble(c[0]), Double.parseDouble(c[1]), Double.parseDouble(c[feed])});
                 }
             }
         } catch (IOException | RuntimeException e) {
@@ -705,7 +715,7 @@ public class Shots implements Part {
             Object f = m.get("fraction");
             if (!(f instanceof Double) || ((Double) f).isNaN()) continue;
             out.put(sides[i] + "ShotPointsMakeable", new Expected((Double) f, 0, "share", String.format(Locale.US,
-                    "share of the %d saved %s points whose speed and hood score at their distance on this robot (1.0 = all)",
+                    "share of the %d saved %s points whose speed scores at their distance on this robot (1.0 = all)",
                     ((List<?>) m.get("points")).size(), sides[i])));
         }
     }

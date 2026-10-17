@@ -44,23 +44,23 @@ import java.util.List;
 //
 // What an auto uses on this robot, and where it comes from. Update the right column when a step changes it.
 //   hardware map (DeviceNames, must equal the Robot Controller configuration; checked in INIT)
-//     lf lb rf rb  drive motors            pp   Pinpoint         intake  intake motor
-//     lt           turret motor (both)     fs bs  flywheels (front NECTAR, back POLLEN)
-//     fpanel bpanel hood servos            fg bg  feed gates      ramp   ramp servo     yz  turret index (optional)
+//     lf lb rf rb  drive motors            pp   Pinpoint         intake  main intake + NECTAR feed motor
+//     pfeed        POLLEN feeder motor     fs bs  flywheels (front NECTAR, back POLLEN)
+//     fg bg bg2  feed gates (back: a servo each side)   rampl rampr  ramp servos (continuous)   fyaw byaw  turret servos
 //   Tuned values the route reads (config/Tuned, generated from team-config.yaml)
 //     blueStartX/Y/Heading, blueParkX/Y/Heading   start and park              H-2, replaced by the real route
 //     centerTo*  (Field.cornerPose, start against the wall)                   CAD
 //     front/backPivotX/Y, red*CellX/Y, front/backYawTrimDeg   aim target     H-1, programs 3, 8, 9
-//     yaw*  (Yaw: ticks per degree, kP, friction, limits)                     program 3
-//     front/back flywheel gains, hood range, shot table, feed power          programs 7, 8, 9
-//     front/backGateClosed/Open, gateTravelS, rampStowed/Deployed             program 4 (E-8)
+//     front/backYaw*, yawDegPerS  (Yaw: servo forward, per degree, limits, turn speed)   program 3
+//     front/back flywheel gains, shot table (no hood), feed power            programs 7, 8 (back), 9 (front)
+//     front/backGate(2)Closed/Open, gateTravelS, rampOutS/InS/HoldPower      program 4 (E-8)
 //     Pedro follower and Pinpoint constants (pedro/Constants)                 program 5, F-1, F-2
 //   rules the route has to respect: R102/G403 nothing moves in INIT or between AUTO and TELEOP, G402 stay on our
 //   side of the field in AUTO, G407 at most 4 elements held (the mechanism limits it), G418 POLLEN only from the
 //   bottom of a FLOWER.
-//   not in AutoRunner yet (add to it, and to this sample, when a real auto or the CAD needs it): shooting from one
-//   launcher only and counting elements (both would be options on an End.SHOOT leg), reading a sensor to end a
-//   leg early.
+//   AutoRunner fires only the launchers whose turret reaches the CELL (the other gate stays shut). Not in it yet (add to
+//   it, and to this sample, when a real auto needs it): a route choosing which launcher fires and counting elements
+//   (both would be options on an End.SHOOT leg), reading a sensor to end a leg early.
 public class SampleAutoPaths {
     private final PoseFactory poseFactory = MatchState.poseFactory();
 

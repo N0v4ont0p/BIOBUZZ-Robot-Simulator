@@ -481,8 +481,9 @@ public final class Sim {
     public static final Map<String, String> NAMES = new LinkedHashMap<>();
     static {
         String[] pairs = {"drive.leftFront", "lf", "drive.leftBack", "lb", "drive.rightFront", "rf", "drive.rightBack", "rb",
-                "intake", "intake", "yaw", "lt", "flywheel.front", "fs", "flywheel.back", "bs", "hood.front", "fpanel",
-                "hood.back", "bpanel", "ramp", "ramp", "gate.front", "fg", "gate.back", "bg", "pinpoint", "pp"};
+                "intake", "intake", "pollenFeed", "pfeed", "flywheel.front", "fs", "flywheel.back", "bs", "ramp.left", "rampl",
+                "ramp.right", "rampr", "gate.front", "fg", "gate.back", "bg", "gate.back2", "bg2", "yaw.front", "fyaw", "yaw.back", "byaw",
+                "pinpoint", "pp"};
         for (int i = 0; i < pairs.length; i += 2) NAMES.put(pairs[i], pairs[i + 1]);
     }
 
@@ -496,12 +497,11 @@ public final class Sim {
         for (int h = 0; h < 2; h++) {
             RobotConfig.Module m = c.modules.get(h);
             for (int i = 0; i < 4; i++) if (motors[h][i] != null) m.motors.add(new RobotConfig.Device(motor, names.get(motors[h][i]), i, -1));
-            for (int i = 0; i < 6; i++) if (servos[h][i] != null) m.servos.add(new RobotConfig.Device("Servo", names.get(servos[h][i]), i, -1));
+            // the ramp servos are continuous rotation ones
+            for (int i = 0; i < 6; i++) if (servos[h][i] != null) m.servos.add(new RobotConfig.Device(servos[h][i].startsWith("ramp.")
+                    ? "ContinuousRotationServo" : "Servo", names.get(servos[h][i]), i, -1));
         }
         c.modules.get(0).i2c.add(new RobotConfig.Device(Devices.PINPOINT_TAG, "pp", 0, 1));
-        // the turret index switch, on robots that have one (setup guide D-1: Digital Device "yz")
-        org.biobuzz.sim.hw.Hub ch = world.robot.controlHub;
-        for (int i = 0; i < ch.digital.length; i++) if ("yawIndex".equals(ch.digital[i])) c.modules.get(0).digital.add(new RobotConfig.Device("DigitalDevice", "yz", i, -1));
         return c;
     }
 }
